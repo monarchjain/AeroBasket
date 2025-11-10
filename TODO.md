@@ -1,0 +1,5 @@
+- [x] Remove existing .git directory
+- [x] Initialize new Git repository
+- [ ] Add all files to staging area
+- [ ] Commit all changes with a single commit
+- [ ] Verify project works by running flutter pub get
