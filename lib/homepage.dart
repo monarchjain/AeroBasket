@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart';
+import 'controllers/flight_search_controller.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -14,13 +16,19 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
+  final FlightSearchController searchController = Get.put(FlightSearchController());
+
+  TextEditingController fromController = TextEditingController();
+  TextEditingController toController = TextEditingController();
+  TextEditingController travellerController = TextEditingController(text: "1");
   TextEditingController dateinput = TextEditingController();
+  TextEditingController returnDateInput = TextEditingController();
   String dropdown = "Economy Class";
   var items = ["Economy Class","Premium Economy","Business Class"];
 
   @override
   void initState() {
-    dateinput.text = ""; //set the initial value of text field
+    dateinput.text = "";
     super.initState();
   }
 
@@ -35,7 +43,7 @@ class _HomepageState extends State<Homepage> {
           padding: EdgeInsets.only(left: 70),
           child: Text('AeroBasket',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 25),),
         ),
-          backgroundColor: const Color(0xFFF88863),
+        backgroundColor: const Color(0xFFF88863),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.add_shopping_cart,size: 30,),
@@ -71,8 +79,8 @@ class _HomepageState extends State<Homepage> {
                   totalSwitches: 2,
                   labels: const ['One Way', 'Round',],
                   onToggle: (index) => setState(() {
-                      _isShow = !_isShow;
-                    }),
+                    _isShow = !_isShow;
+                  }),
                 ),
               ),
             ),
@@ -87,9 +95,9 @@ class _HomepageState extends State<Homepage> {
                     Padding(
                       padding: const EdgeInsets.only(left: 10,right: 20,top: 20),
                       child: TextField(
+                        controller: fromController,
                         decoration: InputDecoration(
                             labelText: "From",
-
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10)
                             ),
@@ -100,6 +108,7 @@ class _HomepageState extends State<Homepage> {
                     Padding(
                       padding: const EdgeInsets.only(top: 20,left: 10,right: 20),
                       child: TextField(
+                        controller: toController,
                         decoration: InputDecoration(
                             labelText: "To",
                             border: OutlineInputBorder(
@@ -110,26 +119,25 @@ class _HomepageState extends State<Homepage> {
                       ),
                     ),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 20,left: 10),
-                          child: SizedBox(
-                            width: 300,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 20,left: 10),
+                            child: SizedBox(
+                              width: 300,
                               child: TextField(
-                              decoration: InputDecoration(
-                                labelText: "Traveller",
-                                border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10)
-                                 ),
+                                controller: travellerController,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  labelText: "Traveller",
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10)
+                                  ),
+                                ),
                               ),
-                                onTap: (){
-
-                                },
-                              ),
+                            ),
                           ),
-                        ),
-                      ]
+                        ]
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -155,17 +163,11 @@ class _HomepageState extends State<Homepage> {
                                       lastDate: DateTime(2101)
                                   );
                                   if (date != null) {
-                                    if (kDebugMode) {
-                                      print(date);
-                                    } //pickedDate output format => 2021-03-10 00:00:00.000
+                                    if (kDebugMode) { print(date); }
                                     String formattedDate = DateFormat('yyyy-MM-dd').format(date);
-                                    if (kDebugMode) {
-                                      print(formattedDate);
-                                    }
-                                    setState(() {dateinput.text = formattedDate; //set output date to TextField value.
-                                    });
+                                    setState(() {dateinput.text = formattedDate;});
                                   }
-                                                                }
+                                }
                             ),
                           ),
                         ),
@@ -176,7 +178,7 @@ class _HomepageState extends State<Homepage> {
                               child: SizedBox(
                                 width: 140,
                                 child: TextField(
-                                    controller: dateinput,
+                                    controller: returnDateInput,
                                     decoration: InputDecoration(
                                         labelText: "Return",
                                         border: OutlineInputBorder(
@@ -193,17 +195,11 @@ class _HomepageState extends State<Homepage> {
                                           lastDate: DateTime(2101)
                                       );
                                       if (date != null) {
-                                        if (kDebugMode) {
-                                          print(date);
-                                        } //pickedDate output format => 2021-03-10 00:00:00.000
+                                        if (kDebugMode) { print(date); }
                                         String formattedDate = DateFormat('yyyy-MM-dd').format(date);
-                                        if (kDebugMode) {
-                                          print(formattedDate);
-                                        }
-                                        setState(() {dateinput.text = formattedDate; //set output date to TextField value.
-                                        });
+                                        setState(() {returnDateInput.text = formattedDate;});
                                       }
-                                                                        }
+                                    }
                                 ),
                               ),
                             )
@@ -234,16 +230,33 @@ class _HomepageState extends State<Homepage> {
                         )
                       ],
                     ),
-                  Padding(
+                    Padding(
                       padding: const EdgeInsets.only(top: 30,bottom: 30),
                       child: Center(
                         child: InkWell(
-                          onTap: (){
+                          onTap: () async {
+                            if (fromController.text.trim().isEmpty || toController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Please enter both From and To cities")),
+                              );
+                              return;
+                            }
+                            searchController.fromCity.value = fromController.text.trim();
+                            searchController.toCity.value = toController.text.trim();
+                            searchController.travelDate.value = dateinput.text;
+                            searchController.returnDate.value = returnDateInput.text;
+                            searchController.travellers.value =
+                            travellerController.text.trim().isEmpty ? "1" : travellerController.text.trim();
+                            searchController.travelClass.value = dropdown;
+
+                            await searchController.searchFlights();
+
+                            if (!context.mounted) return;
                             Navigator.push(
                               context,
                               MaterialPageRoute(builder: (context) => const Searchpage()),
                             );
-                            },
+                          },
                           child:Container(
                             height: 40,
                             width: 300,
@@ -255,7 +268,7 @@ class _HomepageState extends State<Homepage> {
                           ),
                         ),
                       ),
-                  )
+                    )
                   ],
                 ),
               ),
