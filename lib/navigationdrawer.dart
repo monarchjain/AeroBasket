@@ -1,7 +1,10 @@
 import 'package:aerobasket/changepassword.dart';
+import 'package:aerobasket/login.dart';
 import 'package:aerobasket/mybooking.dart';
 import 'package:aerobasket/updateprofile.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'controllers/auth_controller.dart';
 
 class Navigationdrawer extends StatefulWidget {
   const Navigationdrawer({super.key});
@@ -11,22 +14,51 @@ class Navigationdrawer extends StatefulWidget {
 }
 
 class _NavigationdrawerState extends State<Navigationdrawer> {
+  final AuthController authController = Get.find<AuthController>();
+
+  void _confirmSignOut(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text("Sign Out"),
+        content: const Text("Are you sure you want to sign out?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              authController.logout();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const Login()),
+                    (route) => false,
+              );
+            },
+            child: const Text("Sign Out", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
       child: ListView(
         children: [
-          UserAccountsDrawerHeader(
-              accountName: const Text("Monarch",style: TextStyle(color: Colors.black)),
-              accountEmail: const Text('monarch123jain@gmail.com',style: TextStyle(color: Colors.black)),
+          Obx(() => UserAccountsDrawerHeader(
+            accountName: Text(authController.userName.value, style: const TextStyle(color: Colors.black)),
+            accountEmail: Text(authController.userEmail.value, style: const TextStyle(color: Colors.black)),
             currentAccountPicture: CircleAvatar(
               child: ClipOval(child: Image.asset("assets/profilepic.png"),
               ),
             ),
             decoration: const BoxDecoration(
-              color: Colors.white
+                color: Colors.white
             ),
-          ),
+          )),
           ListTile(
             leading: const Icon(Icons.edit),
             title: const Text("Edit Account"),
@@ -64,6 +96,12 @@ class _NavigationdrawerState extends State<Navigationdrawer> {
           const ListTile(
             leading: Icon(Icons.star),
             title: Text("Rate Us"),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text("Sign Out", style: TextStyle(color: Colors.red)),
+            onTap: () => _confirmSignOut(context),
           ),
         ],
       ),
