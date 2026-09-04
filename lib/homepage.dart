@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:aerobasket/mycart.dart';
 import 'package:aerobasket/navigationdrawer.dart';
 import 'package:aerobasket/searchpage.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'controllers/flight_search_controller.dart';
 
 class Homepage extends StatefulWidget {
@@ -18,8 +20,11 @@ class Homepage extends StatefulWidget {
 class _HomepageState extends State<Homepage> {
   final FlightSearchController searchController = Get.put(FlightSearchController());
 
-  TextEditingController fromController = TextEditingController();
-  TextEditingController toController = TextEditingController();
+  List<String> cityList = [];
+  bool isLoadingCities = true;
+  String? selectedFromCity;
+  String? selectedToCity;
+
   TextEditingController travellerController = TextEditingController(text: "1");
   TextEditingController dateinput = TextEditingController();
   TextEditingController returnDateInput = TextEditingController();
@@ -30,6 +35,24 @@ class _HomepageState extends State<Homepage> {
   void initState() {
     dateinput.text = "";
     super.initState();
+    fetchCities();
+  }
+
+  Future<void> fetchCities() async {
+    try {
+      final response = await http.get(Uri.parse('http://10.0.2.2:3000/api/flights/cities'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          cityList = List<String>.from(data['cities']);
+          isLoadingCities = false;
+        });
+      } else {
+        setState(() { isLoadingCities = false; });
+      }
+    } catch (e) {
+      setState(() { isLoadingCities = false; });
+    }
   }
 
   var _isShow = true;
@@ -94,8 +117,8 @@ class _HomepageState extends State<Homepage> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(left: 10,right: 20,top: 20),
-                      child: TextField(
-                        controller: fromController,
+                      child: DropdownButtonFormField<String>(
+                        value: selectedFromCity,
                         decoration: InputDecoration(
                             labelText: "From",
                             border: OutlineInputBorder(
@@ -103,12 +126,17 @@ class _HomepageState extends State<Homepage> {
                             ),
                             prefixIcon: const Icon(Icons.flight_takeoff)
                         ),
+                        hint: Text(isLoadingCities ? "Loading cities..." : "Select departure city"),
+                        items: cityList.map((city) => DropdownMenuItem(value: city, child: Text(city))).toList(),
+                        onChanged: (value) {
+                          setState(() { selectedFromCity = value; });
+                        },
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(top: 20,left: 10,right: 20),
-                      child: TextField(
-                        controller: toController,
+                      child: DropdownButtonFormField<String>(
+                        value: selectedToCity,
                         decoration: InputDecoration(
                             labelText: "To",
                             border: OutlineInputBorder(
@@ -116,6 +144,11 @@ class _HomepageState extends State<Homepage> {
                             ),
                             prefixIcon: const Icon(Icons.flight_land)
                         ),
+                        hint: Text(isLoadingCities ? "Loading cities..." : "Select arrival city"),
+                        items: cityList.map((city) => DropdownMenuItem(value: city, child: Text(city))).toList(),
+                        onChanged: (value) {
+                          setState(() { selectedToCity = value; });
+                        },
                       ),
                     ),
                     Row(
@@ -233,29 +266,42 @@ class _HomepageState extends State<Homepage> {
                     Padding(
                       padding: const EdgeInsets.only(top: 30,bottom: 30),
                       child: Center(
-                        child: InkWell(
-                          onTap: () async {
-                            if (fromController.text.trim().isEmpty || toController.text.trim().isEmpty) {
+                        child: Obx(() => InkWell(
+                          onTap: searchController.isSearching.value ? null : () async {
+                            if (selectedFromCity == null || selectedToCity == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Please enter both From and To cities")),
+                                const SnackBar(content: Text("Please select both From and To cities")),
                               );
                               return;
                             }
-                            searchController.fromCity.value = fromController.text.trim();
-                            searchController.toCity.value = toController.text.trim();
+                            if (selectedFromCity == selectedToCity) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("From and To cities can't be the same")),
+                              );
+                              return;
+                            }
+                            searchController.fromCity.value = selectedFromCity!;
+                            searchController.toCity.value = selectedToCity!;
                             searchController.travelDate.value = dateinput.text;
                             searchController.returnDate.value = returnDateInput.text;
                             searchController.travellers.value =
                             travellerController.text.trim().isEmpty ? "1" : travellerController.text.trim();
                             searchController.travelClass.value = dropdown;
 
-                            await searchController.searchFlights();
+                            final success = await searchController.searchFlights();
 
                             if (!context.mounted) return;
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const Searchpage()),
-                            );
+
+                            if (success) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const Searchpage()),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Could not connect to server. Is the backend running?")),
+                              );
+                            }
                           },
                           child:Container(
                             height: 40,
@@ -264,9 +310,13 @@ class _HomepageState extends State<Homepage> {
                                 borderRadius: BorderRadius.all(Radius.circular(10)),
                                 color: Color(0xFFEC441E)
                             ),
-                            child: const Center(child: Text("Search",style: TextStyle(fontSize: 20, color: Colors.white,fontWeight: FontWeight.w600),)),
+                            child: Center(
+                              child: searchController.isSearching.value
+                                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : const Text("Search",style: TextStyle(fontSize: 20, color: Colors.white,fontWeight: FontWeight.w600),),
+                            ),
                           ),
-                        ),
+                        )),
                       ),
                     )
                   ],

@@ -28,4 +28,22 @@ class Flight {
     required this.price,
     required this.seatsAvailable,
   });
+
+  factory Flight.fromJson(Map<String, dynamic> json) {
+    return Flight(
+      id: json['_id'] ?? '',
+      airline: json['airline'] ?? '',
+      flightNumber: json['flightNumber'] ?? '',
+      fromCity: json['fromCity'] ?? '',
+      fromCode: json['fromCode'] ?? '',
+      toCity: json['toCity'] ?? '',
+      toCode: json['toCode'] ?? '',
+      departureTime: json['departureTime'] ?? '',
+      arrivalTime: json['arrivalTime'] ?? '',
+      duration: json['duration'] ?? '',
+      travelClass: json['travelClass'] ?? 'Economy Class',
+      price: (json['price'] as num?)?.toInt() ?? 0,
+      seatsAvailable: (json['seatsAvailable'] as num?)?.toInt() ?? 0,
+    );
+  }
 }
