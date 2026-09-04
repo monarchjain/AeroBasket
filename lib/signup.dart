@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import 'controllers/auth_controller.dart';
+import 'config/api_config.dart';
 
 class SignUp extends StatefulWidget {
   const SignUp({super.key});
@@ -240,7 +241,7 @@ class _SignUpState extends State<SignUp> {
 
     try {
       var response = await http.post(
-        Uri.parse('http://10.0.2.2:3000/api/auth/register'),
+        Uri.parse('${ApiConfig.baseUrl}/api/auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           "name": nameController.text.trim(),

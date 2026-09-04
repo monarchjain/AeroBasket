@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import 'controllers/auth_controller.dart';
+import 'config/api_config.dart';
 
 class UpdateProfile extends StatefulWidget {
   const UpdateProfile({super.key});
@@ -39,7 +40,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
   Future<void> fetchProfile() async {
     try {
       var response = await http.get(
-        Uri.parse('http://10.0.2.2:3000/api/user/profile'),
+        Uri.parse('${ApiConfig.baseUrl}/api/user/profile'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${authController.token.value}',
@@ -80,7 +81,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
 
     try {
       var response = await http.put(
-        Uri.parse('http://10.0.2.2:3000/api/user/profile'),
+        Uri.parse('${ApiConfig.baseUrl}/api/user/profile'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${authController.token.value}',

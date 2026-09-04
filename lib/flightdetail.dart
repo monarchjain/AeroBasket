@@ -31,10 +31,6 @@ class _FlightDetailState extends State<FlightDetail> {
 
     return Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
           title: const Text('Flight Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
           backgroundColor: const Color(0xFFF88863),
           actions: <Widget>[

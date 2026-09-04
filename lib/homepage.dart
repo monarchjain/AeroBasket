@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'controllers/flight_search_controller.dart';
+import 'config/api_config.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -40,7 +41,7 @@ class _HomepageState extends State<Homepage> {
 
   Future<void> fetchCities() async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3000/api/flights/cities'));
+      final response = await http.get(Uri.parse('${ApiConfig.baseUrl}/api/flights/cities'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {

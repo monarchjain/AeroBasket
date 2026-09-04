@@ -30,6 +30,7 @@ dependencies:
   flutter:
     sdk: flutter
   intl: ^0.20.2
+  device_info_plus: ^13.2.0
   item_count_number_button: ^1.0.0
   slider_button: ^3.1.0
   vibration: ^3.2.0

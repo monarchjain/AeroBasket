@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../models/flight_model.dart';
+import '../config/api_config.dart';
 
 class FlightSearchController extends GetxController {
   var fromCity = ''.obs;
@@ -19,7 +20,7 @@ class FlightSearchController extends GetxController {
   Future<bool> searchFlights() async {
     isSearching.value = true;
     try {
-      final uri = Uri.parse('http://10.0.2.2:3000/api/flights/search').replace(
+      final uri = Uri.parse('${ApiConfig.baseUrl}/api/flights/search').replace(
         queryParameters: {
           if (fromCity.value.isNotEmpty) 'from': fromCity.value,
           if (toCity.value.isNotEmpty) 'to': toCity.value,

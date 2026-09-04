@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import 'controllers/auth_controller.dart';
+import 'config/api_config.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -172,7 +173,7 @@ class _LoginState extends State<Login> {
 
     try {
       var response = await http.post(
-        Uri.parse('http://10.0.2.2:3000/api/auth/login'),
+        Uri.parse('${ApiConfig.baseUrl}/api/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           "email": emailController.text.trim(),
