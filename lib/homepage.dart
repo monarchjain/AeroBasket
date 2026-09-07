@@ -119,7 +119,7 @@ class _HomepageState extends State<Homepage> {
                     Padding(
                       padding: const EdgeInsets.only(left: 10,right: 20,top: 20),
                       child: DropdownButtonFormField<String>(
-                        value: selectedFromCity,
+                        initialValue: selectedFromCity,
                         decoration: InputDecoration(
                             labelText: "From",
                             border: OutlineInputBorder(
@@ -137,7 +137,7 @@ class _HomepageState extends State<Homepage> {
                     Padding(
                       padding: const EdgeInsets.only(top: 20,left: 10,right: 20),
                       child: DropdownButtonFormField<String>(
-                        value: selectedToCity,
+                        initialValue: selectedToCity,
                         decoration: InputDecoration(
                             labelText: "To",
                             border: OutlineInputBorder(
