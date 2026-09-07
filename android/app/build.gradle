@@ -1,11 +1,11 @@
 plugins {
     id "com.android.application"
-    id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
 }
 
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
+
 if (localPropertiesFile.exists()) {
     localPropertiesFile.withReader('UTF-8') { reader ->
         localProperties.load(reader)
@@ -17,24 +17,23 @@ def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '
 
 android {
     namespace "com.example.aerobasket"
+
     compileSdk 36
     ndkVersion "30.0.16138531"
 
     defaultConfig {
         applicationId "com.example.aerobasket"
-        minSdkVersion flutter.minSdkVersion
-        targetSdkVersion 36
-        versionCode 1
-        versionName "1.0"
+
+        minSdk flutter.minSdkVersion
+        targetSdk 36
+
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
     }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = '17'
     }
 
     buildTypes {
@@ -48,11 +47,9 @@ android {
     }
 }
 
-
 flutter {
     source '../..'
 }
 
 dependencies {
-    // Add necessary dependencies here
 }
