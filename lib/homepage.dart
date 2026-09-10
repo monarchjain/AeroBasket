@@ -281,6 +281,19 @@ class _HomepageState extends State<Homepage> {
                               );
                               return;
                             }
+                            if (dateinput.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Please select a travel date")),
+                              );
+                              return;
+                            }
+                            if (_isShow && returnDateInput.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Please select a return date for round trip")),
+                              );
+                              return;
+                            }
+
                             searchController.fromCity.value = selectedFromCity!;
                             searchController.toCity.value = selectedToCity!;
                             searchController.travelDate.value = dateinput.text;
@@ -288,8 +301,9 @@ class _HomepageState extends State<Homepage> {
                             searchController.travellers.value =
                             travellerController.text.trim().isEmpty ? "1" : travellerController.text.trim();
                             searchController.travelClass.value = dropdown;
+                            searchController.isRoundTrip.value = _isShow;
 
-                            final success = await searchController.searchFlights();
+                            final success = await searchController.searchOutbound();
 
                             if (!context.mounted) return;
 

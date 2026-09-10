@@ -1,9 +1,22 @@
+import 'dart:convert';
 import 'package:aerobasket/addpassenger.dart';
-import 'package:aerobasket/flightdetail.dart';
+import 'package:aerobasket/homepage.dart';
 import 'package:aerobasket/navigationdrawer.dart';
 import 'package:aerobasket/payment.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:slider_button/slider_button.dart';
+import 'controllers/auth_controller.dart';
+import 'config/api_config.dart';
+
+class CartGroup {
+  final String? tripId;
+  final List<dynamic> legs;
+  CartGroup({required this.tripId, required this.legs});
+
+  int get totalPrice => legs.fold<int>(0, (sum, item) => sum + ((item['price'] as num?)?.toInt() ?? 0));
+}
 
 class Mycart extends StatefulWidget {
   const Mycart({super.key});
@@ -13,246 +26,267 @@ class Mycart extends StatefulWidget {
 }
 
 class _MycartState extends State<Mycart> {
+  final AuthController authController = Get.find<AuthController>();
+
+  List<CartGroup> cartGroups = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCart();
+  }
+
+  Future<void> fetchCart() async {
+    setState(() { isLoading = true; });
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/cart'),
+        headers: {'Authorization': 'Bearer ${authController.token.value}'},
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        setState(() {
+          cartGroups = _groupItems(data['cartItems']);
+          isLoading = false;
+        });
+      } else {
+        setState(() { isLoading = false; });
+      }
+    } catch (e) {
+      setState(() { isLoading = false; });
+    }
+  }
+
+  List<CartGroup> _groupItems(List<dynamic> items) {
+    final Map<String, List<dynamic>> byTrip = {};
+    final List<dynamic> standalone = [];
+
+    for (final item in items) {
+      final tripId = item['tripId'];
+      if (tripId != null) {
+        byTrip.putIfAbsent(tripId, () => []).add(item);
+      } else {
+        standalone.add(item);
+      }
+    }
+
+    final List<CartGroup> groups = [];
+    for (final item in standalone) {
+      groups.add(CartGroup(tripId: null, legs: [item]));
+    }
+    byTrip.forEach((tripId, legs) {
+      legs.sort((a, b) => a['legType'] == 'outbound' ? -1 : 1);
+      groups.add(CartGroup(tripId: tripId, legs: legs));
+    });
+
+    return groups;
+  }
+
+  Future<void> deleteGroup(CartGroup group) async {
+    for (final leg in group.legs) {
+      await http.delete(
+        Uri.parse('${ApiConfig.baseUrl}/api/cart/${leg['_id']}'),
+        headers: {'Authorization': 'Bearer ${authController.token.value}'},
+      );
+    }
+    await fetchCart();
+  }
+
+  Widget _miniInfo(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.w600)),
+        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+
+  Widget _legTile(Map<String, dynamic> leg, {String? label}) {
+    final flight = leg['flightId'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (label != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFEC441E), fontSize: 13)),
+          ),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: const Color(0xFF4B0082), borderRadius: BorderRadius.circular(4)),
+              child: Text(flight['airline'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 11)),
+            ),
+            const SizedBox(width: 8),
+            Text(flight['flightNumber'] ?? '', style: const TextStyle(color: Color(0xFF4D4C4C), fontSize: 13)),
+            const Spacer(),
+            Text(flight['duration'] ?? '', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(flight['departureTime'] ?? '', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+                Text('${flight['fromCode']}(${flight['fromCity']})', style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w600)),
+              ],
+            ),
+            const Icon(Icons.flight, color: Color(0xFFEC441E)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(flight['arrivalTime'] ?? '', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+                Text('${flight['toCode']}(${flight['toCity']})', style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _miniInfo('Date', (leg['travelDate']?.toString().isNotEmpty ?? false) ? leg['travelDate'] : '-'),
+            _miniInfo('Class', flight['travelClass'] ?? leg['travelClass'] ?? ''),
+            _miniInfo('Travellers', '${leg['travellers'] ?? 1}'),
+            _miniInfo('Price', '₹${leg['price']}'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _groupCard(CartGroup group) {
+    final bool isRoundTrip = group.legs.length > 1;
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (int i = 0; i < group.legs.length; i++) ...[
+              _legTile(group.legs[i], label: isRoundTrip ? (group.legs[i]['legType'] == 'outbound' ? 'Outbound' : 'Return') : null),
+              if (i < group.legs.length - 1) const Divider(height: 28),
+            ],
+            const Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Total: ₹${group.totalPrice}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                TextButton.icon(
+                  onPressed: () => deleteGroup(group),
+                  icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                  label: const Text('Remove', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final int grandTotal = cartGroups.fold<int>(0, (sum, g) => sum + g.totalPrice);
+
     return Scaffold(
-        appBar: AppBar(
-          toolbarHeight: 100,
-          title: const Padding(
-            padding: EdgeInsets.only(left: 70),
-            child: Text('My Cart',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 25),),
-          ),
-          backgroundColor: const Color(0xFFF88863),
+      appBar: AppBar(
+        title: const Text('My Cart', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+        backgroundColor: const Color(0xFFF88863),
+      ),
+      drawer: const Navigationdrawer(),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : cartGroups.isEmpty
+          ? Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text("Your cart is empty", style: TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEC441E)),
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Homepage()),
+                      (route) => false,
+                );
+              },
+              child: const Text("Search Flights", style: TextStyle(color: Colors.white)),
+            ),
+          ],
         ),
-        drawer: const Navigationdrawer(),
-        body: SingleChildScrollView(
-        child:Column(
-            children:[
-              Column(
-                children:[
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    scrollDirection: Axis.vertical,
-                    itemCount: 2,
-                    itemBuilder: (BuildContext context, int index) {
-                      return Card(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 40,top: 20),
-                                  child: Container(
-                                    width: 50,
-                                    height: 20,
-                                    color: const Color(0xFF4B0082),
-                                    child: const Center(child: Text("IndiGo",style: TextStyle(color: Colors.white),)),
-                                  ),
-                                ),
-                                const Padding(
-                                  padding: EdgeInsets.only(left:10 ,top: 20),
-                                  child: Text("6E-5054",style: TextStyle(color: Color(0xFF4D4C4C)),),
-                                ),
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 40),
-                                  child: RichText(
-                                    text: TextSpan(
-                                      text: '',
-                                      style: DefaultTextStyle.of(context).style,
-                                      children: const <TextSpan>[
-                                        TextSpan(text: '05:40\n', style: TextStyle(fontSize: 25,fontWeight: FontWeight.w600)),
-                                        TextSpan(text: 'IDR(Indore)',style: TextStyle(fontSize: 15,fontWeight: FontWeight.w600),),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 10),
-                                  child: Image.asset("assets/trip1.png",width: 120,height: 90),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 20),
-                                  child: RichText(
-                                    text: TextSpan(
-                                      text: '',
-                                      style: DefaultTextStyle.of(context).style,
-                                      children: const <TextSpan>[
-                                        TextSpan(text: '06:55\n', style: TextStyle(fontSize: 25,fontWeight: FontWeight.w600)),
-                                        TextSpan(text: 'BOM(Mumbai)',style: TextStyle(fontSize: 15,fontWeight: FontWeight.w600),),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 20,left: 20),
-                                  child: SizedBox(
-                                    width: 160,
-                                    child: TextField(
-                                      decoration: InputDecoration(
-                                          labelText: "Date",
-                                          border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(10)
-                                          ),
-                                          prefixIcon: const Icon(Icons.calendar_month)
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 20,left: 20,right: 20),
-                                  child: SizedBox(
-                                    width: 160,
-                                    child: TextField(
-                                      decoration: InputDecoration(
-                                          labelText: "Time",
-                                          border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(10)
-                                          ),
-                                          prefixIcon: const Icon(Icons.access_time)
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              ],
-                            ),
-                            Image.asset("assets/Line.png",width: 360,height: 30,),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 20),
-                                  child: RichText(
-                                    text: TextSpan(
-                                      text: '',
-                                      style: DefaultTextStyle.of(context).style,
-                                      children: const <TextSpan>[
-                                        TextSpan(text: 'Class\n', style: TextStyle(color: Colors.grey,fontSize: 15,fontWeight: FontWeight.w600)),
-                                        TextSpan(text: 'Economy',style: TextStyle(fontSize: 15,fontWeight: FontWeight.w600),),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 90),
-                                  child: RichText(
-                                    text: TextSpan(
-                                      text: '',
-                                      style: DefaultTextStyle.of(context).style,
-                                      children: const <TextSpan>[
-                                        TextSpan(text: 'Traveller\n', style: TextStyle(color: Colors.grey,fontSize: 15,fontWeight: FontWeight.w600)),
-                                        TextSpan(text: '1 Adult',style: TextStyle(fontSize: 15,fontWeight: FontWeight.w600),),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 90),
-                                  child: RichText(
-                                    text: TextSpan(
-                                      text: '',
-                                      style: DefaultTextStyle.of(context).style,
-                                      children: const <TextSpan>[
-                                        TextSpan(text: 'Price\n', style: TextStyle(color: Colors.grey,fontSize: 15,fontWeight: FontWeight.w600)),
-                                        TextSpan(text: '₹5000',style: TextStyle(fontSize: 15,fontWeight: FontWeight.w600),),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Image.asset("assets/Line.png",width: 360,height: 30,),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 30,left: 20,bottom: 30),
-                                  child: InkWell(
-                                    onTap: (){
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(builder: (context) => const FlightDetail()),
-                                      );
-                                      },
-                                    child:Container(
-                                      height: 40,
-                                      width: 100,
-                                      decoration: BoxDecoration(
-                                          borderRadius: const BorderRadius.all(Radius.circular(10)),
-                                          border: Border.all(color: const Color(0xFFEC441E))
-                                      ),
-                                      child: const Center(child: Text("Cancel",style: TextStyle(fontSize: 20, color: Color(0xFFEC441E),fontWeight: FontWeight.w600),)),
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                    icon: const Icon(Icons.delete_forever),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(builder: (
-                                            context) => const Mycart()),
-                                      );
-                                    }
-                                    ),
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 30,bottom: 30),
-                                  child: Center(
-                                    child: InkWell(
-                                      onTap: (){
-                                        Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => const AddPassenger()),
-                                        );
-                                        },
-                                      child:Container(
-                                        height: 40,
-                                        width: 200,
-                                        decoration: const BoxDecoration(
-                                            borderRadius: BorderRadius.all(Radius.circular(10)),
-                                            color: Color(0xFFEC441E)
-                                        ),
-                                        child: const Center(child: Text("Choose Passenger",style: TextStyle(fontSize: 14, color: Colors.white,fontWeight: FontWeight.w600),)),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              ],
-                            )
-                          ],
-                        ),
-                      );
-                      },
-                  ),
-                ]
+      )
+          : RefreshIndicator(
+        onRefresh: fetchCart,
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                itemCount: cartGroups.length,
+                itemBuilder: (context, index) => _groupCard(cartGroups[index]),
               ),
-              Center(child: SliderButton(
-                  action: () async {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Payment()),
-                    );
-                    return null;
-                    },
-                  label: const Text("Slide For Payment", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 17),),
-                  icon: const Icon(Icons.arrow_forward,size: 35),
-                  backgroundColor: const Color(0xFFEC441E)
-              )
-              )
-            ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, -2))],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Grand Total', style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w600)),
+                      Text('₹$grandTotal', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFEC441E)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const AddPassenger()));
+                      },
+                      child: const Text("Choose Passengers", style: TextStyle(color: Color(0xFFEC441E), fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: SliderButton(
+                      action: () async {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const Payment()));
+                        return null;
+                      },
+                      label: const Text("Slide For Payment", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 16)),
+                      icon: const Icon(Icons.arrow_forward, size: 30),
+                      backgroundColor: const Color(0xFFEC441E),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        )
+      ),
     );
   }
 }

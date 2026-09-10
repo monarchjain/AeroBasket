@@ -11,19 +11,34 @@ class FlightSearchController extends GetxController {
   var returnDate = ''.obs;
   var travellers = '1'.obs;
   var travelClass = 'Economy Class'.obs;
+  var isRoundTrip = false.obs;
 
   var searchResults = <Flight>[].obs;
   var isSearching = false.obs;
+  var currentLeg = 'outbound'.obs; // 'outbound' or 'return'
 
-  Flight? selectedFlight;
+  Flight? selectedOutboundFlight;
+  Flight? selectedReturnFlight;
 
-  Future<bool> searchFlights() async {
+  Future<bool> searchOutbound() async {
+    currentLeg.value = 'outbound';
+    selectedOutboundFlight = null;
+    selectedReturnFlight = null;
+    return _search(from: fromCity.value, to: toCity.value);
+  }
+
+  Future<bool> searchReturn() async {
+    currentLeg.value = 'return';
+    return _search(from: toCity.value, to: fromCity.value); // reversed route
+  }
+
+  Future<bool> _search({required String from, required String to}) async {
     isSearching.value = true;
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/api/flights/search').replace(
         queryParameters: {
-          if (fromCity.value.isNotEmpty) 'from': fromCity.value,
-          if (toCity.value.isNotEmpty) 'to': toCity.value,
+          if (from.isNotEmpty) 'from': from,
+          if (to.isNotEmpty) 'to': to,
         },
       );
 

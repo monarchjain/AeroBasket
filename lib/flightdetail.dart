@@ -1,9 +1,13 @@
+import 'dart:convert';
 import 'package:aerobasket/mycart.dart';
 import 'package:aerobasket/navigationdrawer.dart';
 import 'package:aerobasket/searchpage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'controllers/flight_search_controller.dart';
+import 'controllers/auth_controller.dart';
+import 'config/api_config.dart';
 import 'models/flight_model.dart';
 
 class FlightDetail extends StatefulWidget {
@@ -15,193 +19,257 @@ class FlightDetail extends StatefulWidget {
 
 class _FlightDetailState extends State<FlightDetail> {
   final FlightSearchController searchController = Get.find<FlightSearchController>();
+  final AuthController authController = Get.find<AuthController>();
+
+  bool isAdding = false;
+
+  Future<bool> _postCartItem({
+    required String flightId,
+    required String travelDate,
+    required String legType,
+    String? tripId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/cart'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${authController.token.value}',
+        },
+        body: jsonEncode({
+          "flightId": flightId,
+          "travelDate": travelDate,
+          "travelClass": searchController.travelClass.value,
+          "travellers": int.tryParse(searchController.travellers.value) ?? 1,
+          "legType": legType,
+          "tripId": tripId,
+        }),
+      );
+      return response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> addToCart() async {
+    setState(() { isAdding = true; });
+
+    final bool roundTrip = searchController.isRoundTrip.value && searchController.selectedReturnFlight != null;
+    final String? tripId = roundTrip ? DateTime.now().microsecondsSinceEpoch.toString() : null;
+
+    try {
+      final outbound = searchController.selectedOutboundFlight!;
+      final outboundOk = await _postCartItem(
+        flightId: outbound.id,
+        travelDate: searchController.travelDate.value,
+        legType: roundTrip ? 'outbound' : 'one_way',
+        tripId: tripId,
+      );
+
+      bool returnOk = true;
+      if (roundTrip) {
+        final ret = searchController.selectedReturnFlight!;
+        returnOk = await _postCartItem(
+          flightId: ret.id,
+          travelDate: searchController.returnDate.value,
+          legType: 'return',
+          tripId: tripId,
+        );
+      }
+
+      if (!mounted) return;
+
+      if (outboundOk && returnOk) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Added to cart")),
+        );
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const Mycart()));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Could not add to cart. Please try again.")),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() { isAdding = false; });
+      }
+    }
+  }
+
+  Widget _flightCard(Flight flight, String label) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFFEC441E))),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: const Color(0xFF4B0082), borderRadius: BorderRadius.circular(4)),
+                  child: Flexible(child: Text(flight.airline, style: const TextStyle(color: Colors.white,fontSize: 12), overflow: TextOverflow.ellipsis)),
+                ),
+                const SizedBox(width: 10),
+                Flexible(child: Text(flight.flightNumber, style: const TextStyle(color: Color(0xFF4D4C4C)), overflow: TextOverflow.ellipsis)),
+                const Spacer(),
+                Text(flight.duration, style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(flight.departureTime, style: const TextStyle(fontSize: 28,fontWeight: FontWeight.w600)),
+                      Text('${flight.fromCode}(${flight.fromCity})', style: const TextStyle(color: Colors.grey,fontSize: 13,fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.flight, color: Color(0xFFEC441E)),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(flight.arrivalTime, style: const TextStyle(fontSize: 28,fontWeight: FontWeight.w600)),
+                      Text('${flight.toCode}(${flight.toCity})', style: const TextStyle(color: Colors.grey,fontSize: 13,fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.airline_seat_recline_normal, color: Colors.grey, size: 18),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text("${flight.travelClass} • ${flight.seatsAvailable} seats left • ₹${flight.price}", style: const TextStyle(color: Colors.grey,fontWeight: FontWeight.w600, fontSize: 13), overflow: TextOverflow.ellipsis),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final Flight? flight = searchController.selectedFlight;
+    final Flight? outbound = searchController.selectedOutboundFlight;
+    final bool showReturn = searchController.isRoundTrip.value && searchController.selectedReturnFlight != null;
+    final Flight? returnFlight = searchController.selectedReturnFlight;
 
-    if (flight == null) {
-      // Safety net: this screen was opened without a flight ever being selected
-      // (shouldn't normally happen, but avoids a crash if it does).
+    if (outbound == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Flight Details')),
         body: const Center(child: Text('No flight selected. Please go back and choose a flight.')),
       );
     }
 
+    final int totalPrice = outbound.price + (showReturn ? returnFlight!.price : 0);
+
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Flight Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-          backgroundColor: const Color(0xFFF88863),
-          actions: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.add_shopping_cart, size: 28),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const Mycart()),
-                );
-              },
-            ),
-          ],
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
-        drawer: const Navigationdrawer(),
-        body: ListView(
-            children: [
-              Card(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        title: const Text('Flight Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        backgroundColor: const Color(0xFFF88863),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.add_shopping_cart, size: 26),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const Mycart()),
+              );
+            },
+          ),
+        ],
+      ),
+      drawer: const Navigationdrawer(),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(top: 8),
+              children: [
+                _flightCard(outbound, showReturn ? "Outbound" : "Flight"),
+                if (showReturn) _flightCard(returnFlight!, "Return"),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, -2))],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 40,top: 20),
-                          child: Container(
-                            width: 60,
-                            height: 20,
-                            color: const Color(0xFF4B0082),
-                            child: Center(child: Text(flight.airline,style: const TextStyle(color: Colors.white,fontSize: 12),)),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 20,left: 10),
-                          child: Text(flight.flightNumber,style: const TextStyle(color: Color(0xFF4D4C4C)),),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 100),
-                          child: Text(flight.duration,style: const TextStyle(color: Colors.grey,)),
-                        )
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 25),
-                          child: RichText(
-                            text: TextSpan(
-                              text: '',
-                              style: DefaultTextStyle.of(context).style,
-                              children: [
-                                TextSpan(text: '${flight.departureTime}\n', style: const TextStyle(fontSize: 35,fontWeight: FontWeight.w600,color: Colors.black)),
-                                TextSpan(text: '${flight.fromCode}(${flight.fromCity})',style: const TextStyle(color: Colors.black,fontSize: 13,fontWeight: FontWeight.w600,),),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 5),
-                          child: Image.asset("assets/trip1.png",width: 120,height: 90),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 15),
-                          child: RichText(
-                            text: TextSpan(
-                              text: '',
-                              style: DefaultTextStyle.of(context).style,
-                              children: [
-                                TextSpan(text: '${flight.arrivalTime}\n', style: const TextStyle(fontSize: 35,fontWeight: FontWeight.w600,color: Colors.black)),
-                                TextSpan(text: '${flight.toCode}(${flight.toCity})',style: const TextStyle(fontSize: 15,fontWeight: FontWeight.w600,color: Colors.black),),
-                              ],
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 20),
-                          child: Text("${flight.fromCity}\nAirport India",style: const TextStyle(color: Colors.grey),),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 180),
-                          child: Text("${flight.toCity}\nAirport India",style: const TextStyle(color: Colors.grey),),
-                        )
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20,left: 20),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.airline_seat_recline_normal, color: Colors.grey),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8),
-                            child: Text("${flight.travelClass} • ${flight.seatsAvailable} seats left",style: const TextStyle(color: Colors.grey,fontWeight: FontWeight.w600)),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 30),
-                      child: Center(
-                        child: RichText(
-                            text: TextSpan(
-                              text: '',
-                              style: DefaultTextStyle.of(context).style,
-                              children: [
-                                const TextSpan(text: 'Price    ', style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600,color: Colors.grey)),
-                                TextSpan(text: '₹${flight.price}',style: const TextStyle(color: Colors.black,fontSize: 25,fontWeight: FontWeight.w600),),
-                              ],
-                            )
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 30,left: 40,bottom: 30),
-                          child: InkWell(
-                            onTap: (){
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const Searchpage()),
-                              );
-                            },
-                            child:Container(
-                              height: 40,
-                              width: 100,
-                              decoration: BoxDecoration(
-                                  borderRadius: const BorderRadius.all(Radius.circular(10)),
-                                  border: Border.all(color: const Color(0xFFEC441E))
-                              ),
-                              child: const Center(child: Text("Cancel",style: TextStyle(fontSize: 20, color: Color(0xFFEC441E)),)),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 30,left: 80,bottom: 30),
-                          child: Center(
-                            child: InkWell(
-                              onTap: (){
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const Mycart()),
-                                );
-                              },
-                              child:Container(
-                                height: 40,
-                                width: 150,
-                                decoration: const BoxDecoration(
-                                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                                    color: Color(0xFFEC441E)
-                                ),
-                                child: const Center(child: Text("Add to Cart",style: TextStyle(fontSize: 20, color: Colors.white,fontWeight: FontWeight.w600),)),
-                              ),
-                            ),
-                          ),
-                        )
-                      ],
-                    )
+                    const Text('Total Price', style: TextStyle(fontSize: 16,fontWeight: FontWeight.w600,color: Colors.grey)),
+                    Text('₹$totalPrice', style: const TextStyle(color: Colors.black,fontSize: 22,fontWeight: FontWeight.w600)),
                   ],
                 ),
-              ),
-            ]
-        )
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: (){
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const Searchpage()),
+                          );
+                        },
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFEC441E)),
+                          ),
+                          child: const Center(child: Text("Cancel", style: TextStyle(fontSize: 16, color: Color(0xFFEC441E)))),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: InkWell(
+                        onTap: isAdding ? null : addToCart,
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: const Color(0xFFEC441E),
+                          ),
+                          child: Center(
+                            child: isAdding
+                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Text("Add to Cart", style: TextStyle(fontSize: 16, color: Colors.white,fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -16,19 +16,41 @@ class Searchpage extends StatefulWidget {
 class _SearchpageState extends State<Searchpage> {
   final FlightSearchController searchController = Get.find<FlightSearchController>();
 
+  void selectFlight(Flight flight) async {
+    if (!searchController.isRoundTrip.value) {
+      searchController.selectedOutboundFlight = flight;
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const FlightDetail()));
+      return;
+    }
+
+    if (searchController.currentLeg.value == 'outbound') {
+      searchController.selectedOutboundFlight = flight;
+      await searchController.searchReturn();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Outbound selected. Now choose your return flight.")),
+        );
+      }
+    } else {
+      searchController.selectedReturnFlight = flight;
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const FlightDetail()));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 100,
-        title: const Padding(
-          padding: EdgeInsets.only(left: 50),
-          child: Text('Available Flights',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 25),),
-        ),
+        title: Obx(() => Text(
+          searchController.isRoundTrip.value && searchController.currentLeg.value == 'return'
+              ? 'Select Return Flight'
+              : 'Available Flights',
+          style: const TextStyle(fontWeight: FontWeight.bold,fontSize: 20),
+        )),
         backgroundColor: const Color(0xFFF88863),
         actions: <Widget>[
           IconButton(
-            icon: const Icon(Icons.add_shopping_cart,size: 30,),
+            icon: const Icon(Icons.add_shopping_cart,size: 28,),
             onPressed: () {
               Navigator.push(
                 context,
@@ -44,147 +66,111 @@ class _SearchpageState extends State<Searchpage> {
           return const Center(child: Text("No flights found"));
         }
         return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 8),
           itemCount: searchController.searchResults.length,
           itemBuilder: (BuildContext context, int index) {
             final Flight flight = searchController.searchResults[index];
             return Card(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 40,top: 20),
-                        child: Container(
-                          width: 60,
-                          height: 20,
-                          color: const Color(0xFF4B0082),
-                          child: Center(child: Text(flight.airline,style: const TextStyle(color: Colors.white,fontSize: 12),)),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(color: const Color(0xFF4B0082), borderRadius: BorderRadius.circular(4)),
+                          child: Flexible(
+                            child: Text(flight.airline, style: const TextStyle(color: Colors.white,fontSize: 12), overflow: TextOverflow.ellipsis),
+                          ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left:10 ,top: 20),
-                        child: Text(flight.flightNumber,style: const TextStyle(color: Color(0xFF4D4C4C)),),
-                      ),
-                      Padding(
-                          padding: const EdgeInsets.only(left: 100,top: 20),
-                          child: Text(flight.duration,style: const TextStyle(color: Colors.grey,),)
-                      )
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 40),
-                        child: RichText(
-                          text: TextSpan(
-                            text: '',
-                            style: DefaultTextStyle.of(context).style,
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(flight.flightNumber, style: const TextStyle(color: Color(0xFF4D4C4C)), overflow: TextOverflow.ellipsis),
+                        ),
+                        const Spacer(),
+                        Text(flight.duration, style: const TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              TextSpan(text: '${flight.departureTime}\n', style: const TextStyle(fontSize: 25,fontWeight: FontWeight.w600)),
-                              TextSpan(text: '${flight.fromCode}(${flight.fromCity})',style: const TextStyle(color: Colors.grey,fontSize: 15,fontWeight: FontWeight.w600),),
+                              Text(flight.departureTime, style: const TextStyle(fontSize: 24,fontWeight: FontWeight.w600)),
+                              Text('${flight.fromCode}(${flight.fromCity})', style: const TextStyle(color: Colors.grey,fontSize: 14,fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
                             ],
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 10),
-                        child: Image.asset("assets/trip1.png",width: 120,height: 90),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 20),
-                        child: RichText(
-                          text: TextSpan(
-                            text: '',
-                            style: DefaultTextStyle.of(context).style,
+                        const Icon(Icons.flight, color: Color(0xFFEC441E)),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              TextSpan(text: '${flight.arrivalTime}\n', style: const TextStyle(fontSize: 25,fontWeight: FontWeight.w600)),
-                              TextSpan(text: '${flight.toCode}(${flight.toCity})',style: const TextStyle(color: Colors.grey,fontSize: 15,fontWeight: FontWeight.w600),),
+                              Text(flight.arrivalTime, style: const TextStyle(fontSize: 24,fontWeight: FontWeight.w600)),
+                              Text('${flight.toCode}(${flight.toCity})', style: const TextStyle(color: Colors.grey,fontSize: 14,fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
                             ],
                           ),
                         ),
-                      )
-                    ],
-                  ),
-                  Image.asset("assets/Line.png",width: 360,height: 30,),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 20),
-                        child: Image.asset("assets/Sofa.png",width: 25,height: 25,),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 10),
-                        child: Text(flight.travelClass,style: const TextStyle(fontSize: 15,color: Colors.grey,fontWeight: FontWeight.w600),),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 80),
-                        child: RichText(
-                          text: TextSpan(
-                            text: '',
-                            style: DefaultTextStyle.of(context).style,
-                            children: [
-                              const TextSpan(text: 'Price  ', style: TextStyle(fontSize: 16,color: Colors.grey,fontWeight: FontWeight.w600)),
-                              TextSpan(text: '₹${flight.price}',style: const TextStyle(fontSize: 16,fontWeight: FontWeight.bold,),),
-                            ],
-                          ),
+                      ],
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Divider(height: 1),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.airline_seat_recline_normal, size: 18, color: Colors.grey),
+                            const SizedBox(width: 6),
+                            Text(flight.travelClass, style: const TextStyle(fontSize: 14,color: Colors.grey,fontWeight: FontWeight.w600)),
+                          ],
                         ),
-                      )
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 30,left: 20,bottom: 30),
-                        child: InkWell(
-                          onTap: (){
-                            searchController.selectedFlight = flight;
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const FlightDetail()),
-                            );
-                          },
-                          child:Container(
-                            height: 40,
-                            width: 150,
-                            decoration: BoxDecoration(
-                                borderRadius: const BorderRadius.all(Radius.circular(10)),
-                                border: Border.all(color: const Color(0xFFEC441E))
-                            ),
-                            child: const Center(child: Text("Check",style: TextStyle(fontSize: 20, color: Color(0xFFEC441E),fontWeight: FontWeight.w600),)),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 30,left: 40,bottom: 30),
-                        child: Center(
+                        Text('Price ₹${flight.price}', style: const TextStyle(fontSize: 16,fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
                           child: InkWell(
-                            onTap: (){
-                              searchController.selectedFlight = flight;
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const Mycart()),
-                              );
-                            },
-                            child:Container(
-                              height: 40,
-                              width: 150,
-                              decoration: const BoxDecoration(
-                                  borderRadius: BorderRadius.all(Radius.circular(10)),
-                                  color: Color(0xFFEC441E)
+                            onTap: () => selectFlight(flight),
+                            child: Container(
+                              height: 44,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFEC441E)),
                               ),
-                              child: const Center(child: Text("Add to Cart",style: TextStyle(fontSize: 20, color: Colors.white,fontWeight: FontWeight.w600),)),
+                              child: const Center(child: Text("Check", style: TextStyle(fontSize: 16, color: Color(0xFFEC441E),fontWeight: FontWeight.w600))),
                             ),
                           ),
                         ),
-                      )
-                    ],
-                  )
-                ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => selectFlight(flight),
+                            child: Container(
+                              height: 44,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: const Color(0xFFEC441E),
+                              ),
+                              child: const Center(child: Text("Add to Cart", style: TextStyle(fontSize: 16, color: Colors.white,fontWeight: FontWeight.w600))),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           },
