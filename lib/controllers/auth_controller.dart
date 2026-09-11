@@ -6,6 +6,7 @@ class AuthController extends GetxController {
   var userName = ''.obs;
   var userEmail = ''.obs;
   var userPhone = ''.obs;
+  var profilePhotoUrl = ''.obs;
 
   bool get isLoggedIn => token.value.isNotEmpty;
 
@@ -29,5 +30,6 @@ class AuthController extends GetxController {
     userName.value = '';
     userEmail.value = '';
     userPhone.value = '';
+    profilePhotoUrl.value = '';
   }
 }

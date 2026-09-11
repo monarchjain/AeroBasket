@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:slider_button/slider_button.dart';
 import 'controllers/auth_controller.dart';
 import 'config/api_config.dart';
+import 'utils/time_format.dart';
 
 class CartGroup {
   final String? tripId;
@@ -133,7 +134,7 @@ class _MycartState extends State<Mycart> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(flight['departureTime'] ?? '', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+                Text(formatTime12Hour(flight['departureTime'] ?? ''), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
                 Text('${flight['fromCode']}(${flight['fromCity']})', style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w600)),
               ],
             ),
@@ -141,7 +142,7 @@ class _MycartState extends State<Mycart> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(flight['arrivalTime'] ?? '', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+                Text(formatTime12Hour(flight['arrivalTime'] ?? ''), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
                 Text('${flight['toCode']}(${flight['toCity']})', style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w600)),
               ],
             ),

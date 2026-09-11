@@ -142,7 +142,7 @@ class _LoginState extends State<Login> {
                 padding: const EdgeInsets.only(top: 140),
                 child: Container(
                   height: 95,
-                  width: 800,
+                  width: double.infinity,
                   decoration: const BoxDecoration(color: Color(0xFFF88863)),
                   child: CupertinoButton(
                     child: const Text('SIGN UP', style: TextStyle(color: Colors.black, decoration: TextDecoration.underline, fontWeight: FontWeight.w600),),

@@ -109,17 +109,16 @@ class _HomepageState extends State<Homepage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 50),
+              padding: const EdgeInsets.only(top: 50, left: 20, right: 20),
               child: Card(
-                margin: const EdgeInsets.only(left: 20,right: 40),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 10,right: 20,top: 20),
-                      child: DropdownButtonFormField<String>(
-                        initialValue: selectedFromCity,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        value: selectedFromCity,
                         decoration: InputDecoration(
                             labelText: "From",
                             border: OutlineInputBorder(
@@ -133,11 +132,9 @@ class _HomepageState extends State<Homepage> {
                           setState(() { selectedFromCity = value; });
                         },
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20,left: 10,right: 20),
-                      child: DropdownButtonFormField<String>(
-                        initialValue: selectedToCity,
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: selectedToCity,
                         decoration: InputDecoration(
                             labelText: "To",
                             border: OutlineInputBorder(
@@ -151,66 +148,53 @@ class _HomepageState extends State<Homepage> {
                           setState(() { selectedToCity = value; });
                         },
                       ),
-                    ),
-                    Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: travellerController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: "Traveller",
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)
+                          ),
+                          prefixIcon: const Icon(Icons.person_outline),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 20,left: 10),
-                            child: SizedBox(
-                              width: 300,
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(right: _isShow ? 8 : 0),
                               child: TextField(
-                                controller: travellerController,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  labelText: "Traveller",
-                                  border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10)
+                                  controller: dateinput,
+                                  decoration: InputDecoration(
+                                      labelText: "Date",
+                                      border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(10)
+                                      ),
+                                      prefixIcon: const Icon(Icons.calendar_month)
                                   ),
-                                ),
+                                  readOnly: true,
+                                  onTap: () async {
+                                    DateTime? date = await showDatePicker(
+                                        context: context,initialDate: DateTime.now(),
+                                        firstDate: DateTime(2000),
+                                        lastDate: DateTime(2101)
+                                    );
+                                    if (date != null) {
+                                      if (kDebugMode) { print(date); }
+                                      String formattedDate = DateFormat('yyyy-MM-dd').format(date);
+                                      setState(() {dateinput.text = formattedDate;});
+                                    }
+                                  }
                               ),
                             ),
                           ),
-                        ]
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 20,left: 10),
-                          child: SizedBox(
-                            width: 140,
-                            child: TextField(
-                                controller: dateinput,
-                                decoration: InputDecoration(
-                                    labelText: "Date",
-                                    border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(10)
-                                    ),
-                                    prefixIcon: const Icon(Icons.calendar_month)
-                                ),
-                                readOnly: true,
-                                onTap: () async {
-                                  DateTime? date = await showDatePicker(
-                                      context: context,initialDate: DateTime.now(),
-                                      firstDate: DateTime(2000),
-                                      lastDate: DateTime(2101)
-                                  );
-                                  if (date != null) {
-                                    if (kDebugMode) { print(date); }
-                                    String formattedDate = DateFormat('yyyy-MM-dd').format(date);
-                                    setState(() {dateinput.text = formattedDate;});
-                                  }
-                                }
-                            ),
-                          ),
-                        ),
-                        Visibility(
-                            visible: _isShow,
-                            child:Padding(
-                              padding: const EdgeInsets.only(top: 20,left: 20,right: 20),
-                              child: SizedBox(
-                                width: 140,
+                          if (_isShow)
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 8),
                                 child: TextField(
                                     controller: returnDateInput,
                                     decoration: InputDecoration(
@@ -218,7 +202,7 @@ class _HomepageState extends State<Homepage> {
                                         border: OutlineInputBorder(
                                             borderRadius: BorderRadius.circular(10)
                                         ),
-                                        hintText: "Add Return",
+                                        hintText: "Return date",
                                         prefixIcon: const Icon(Icons.add)
                                     ),
                                     readOnly: true,
@@ -236,105 +220,107 @@ class _HomepageState extends State<Homepage> {
                                     }
                                 ),
                               ),
-                            )
-                        )
-                      ],
-                    ),
-                    Row(
-                      children:[
-                        Padding(
-                          padding: const EdgeInsets.only(top: 20,left: 100),
-                          child: SizedBox(
-                            width: 170,
-                            child: DropdownButton(
-                                value: dropdown,
-                                items: items.map((String items){
-                                  return DropdownMenuItem(
-                                      value: items,
-                                      child: Text(items,selectionColor:Colors.black));
-                                }).toList(),
-                                borderRadius: BorderRadius.circular(10),
-                                onChanged: (String? newValue){
-                                  setState(() {
-                                    dropdown = newValue!;
-                                  });
-                                }
                             ),
-                          ),
-                        )
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 30,bottom: 30),
-                      child: Center(
-                        child: Obx(() => InkWell(
-                          onTap: searchController.isSearching.value ? null : () async {
-                            if (selectedFromCity == null || selectedToCity == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Please select both From and To cities")),
-                              );
-                              return;
-                            }
-                            if (selectedFromCity == selectedToCity) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("From and To cities can't be the same")),
-                              );
-                              return;
-                            }
-                            if (dateinput.text.trim().isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Please select a travel date")),
-                              );
-                              return;
-                            }
-                            if (_isShow && returnDateInput.text.trim().isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Please select a return date for round trip")),
-                              );
-                              return;
-                            }
-
-                            searchController.fromCity.value = selectedFromCity!;
-                            searchController.toCity.value = selectedToCity!;
-                            searchController.travelDate.value = dateinput.text;
-                            searchController.returnDate.value = returnDateInput.text;
-                            searchController.travellers.value =
-                            travellerController.text.trim().isEmpty ? "1" : travellerController.text.trim();
-                            searchController.travelClass.value = dropdown;
-                            searchController.isRoundTrip.value = _isShow;
-
-                            final success = await searchController.searchOutbound();
-
-                            if (!context.mounted) return;
-
-                            if (success) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const Searchpage()),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Could not connect to server. Is the backend running?")),
-                              );
-                            }
-                          },
-                          child:Container(
-                            height: 40,
-                            width: 300,
-                            decoration: const BoxDecoration(
-                                borderRadius: BorderRadius.all(Radius.circular(10)),
-                                color: Color(0xFFEC441E)
-                            ),
-                            child: Center(
-                              child: searchController.isSearching.value
-                                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                  : const Text("Search",style: TextStyle(fontSize: 20, color: Colors.white,fontWeight: FontWeight.w600),),
-                            ),
-                          ),
-                        )),
+                        ],
                       ),
-                    )
-                  ],
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: SizedBox(
+                          width: 170,
+                          child: DropdownButtonFormField<String>(
+                              value: dropdown,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              ),
+                              items: items.map((String item){
+                                return DropdownMenuItem(
+                                    value: item,
+                                    child: Text(item, style: const TextStyle(fontSize: 13)));
+                              }).toList(),
+                              onChanged: (String? newValue){
+                                setState(() {
+                                  dropdown = newValue!;
+                                });
+                              }
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 24,bottom: 8),
+                        child: Center(
+                          child: Obx(() => InkWell(
+                            onTap: searchController.isSearching.value ? null : () async {
+                              if (selectedFromCity == null || selectedToCity == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Please select both From and To cities")),
+                                );
+                                return;
+                              }
+                              if (selectedFromCity == selectedToCity) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("From and To cities can't be the same")),
+                                );
+                                return;
+                              }
+                              if (dateinput.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Please select a travel date")),
+                                );
+                                return;
+                              }
+                              if (_isShow && returnDateInput.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Please select a return date for round trip")),
+                                );
+                                return;
+                              }
+
+                              searchController.fromCity.value = selectedFromCity!;
+                              searchController.toCity.value = selectedToCity!;
+                              searchController.travelDate.value = dateinput.text;
+                              searchController.returnDate.value = returnDateInput.text;
+                              searchController.travellers.value =
+                              travellerController.text.trim().isEmpty ? "1" : travellerController.text.trim();
+                              searchController.travelClass.value = dropdown;
+                              searchController.isRoundTrip.value = _isShow;
+
+                              final success = await searchController.searchOutbound();
+
+                              if (!context.mounted) return;
+
+                              if (success) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const Searchpage()),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Could not connect to server. Is the backend running?")),
+                                );
+                              }
+                            },
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: Container(
+                                height: 44,
+                                decoration: const BoxDecoration(
+                                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                                    color: Color(0xFFEC441E)
+                                ),
+                                child: Center(
+                                  child: searchController.isSearching.value
+                                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                      : const Text("Search",style: TextStyle(fontSize: 18, color: Colors.white,fontWeight: FontWeight.w600),),
+                                ),
+                              ),
+                            ),
+                          )),
+                        ),
+                      )
+                    ],
+                  ),
                 ),
               ),
             )

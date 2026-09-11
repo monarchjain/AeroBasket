@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'controllers/flight_search_controller.dart';
 import 'models/flight_model.dart';
+import 'utils/time_format.dart';
 
 class Searchpage extends StatefulWidget {
   const Searchpage({super.key});
@@ -103,7 +104,7 @@ class _SearchpageState extends State<Searchpage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(flight.departureTime, style: const TextStyle(fontSize: 24,fontWeight: FontWeight.w600)),
+                              Text(formatTime12Hour(flight.departureTime), style: const TextStyle(fontSize: 22,fontWeight: FontWeight.w600)),
                               Text('${flight.fromCode}(${flight.fromCity})', style: const TextStyle(color: Colors.grey,fontSize: 14,fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
                             ],
                           ),
@@ -113,7 +114,7 @@ class _SearchpageState extends State<Searchpage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(flight.arrivalTime, style: const TextStyle(fontSize: 24,fontWeight: FontWeight.w600)),
+                              Text(formatTime12Hour(flight.arrivalTime), style: const TextStyle(fontSize: 22,fontWeight: FontWeight.w600)),
                               Text('${flight.toCode}(${flight.toCity})', style: const TextStyle(color: Colors.grey,fontSize: 14,fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
                             ],
                           ),

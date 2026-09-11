@@ -9,6 +9,7 @@ import 'controllers/flight_search_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'config/api_config.dart';
 import 'models/flight_model.dart';
+import 'utils/time_format.dart';
 
 class FlightDetail extends StatefulWidget {
   const FlightDetail({super.key});
@@ -128,7 +129,7 @@ class _FlightDetailState extends State<FlightDetail> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(flight.departureTime, style: const TextStyle(fontSize: 28,fontWeight: FontWeight.w600)),
+                      Text(formatTime12Hour(flight.departureTime), style: const TextStyle(fontSize: 26,fontWeight: FontWeight.w600)),
                       Text('${flight.fromCode}(${flight.fromCity})', style: const TextStyle(color: Colors.grey,fontSize: 13,fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
                     ],
                   ),
@@ -138,7 +139,7 @@ class _FlightDetailState extends State<FlightDetail> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(flight.arrivalTime, style: const TextStyle(fontSize: 28,fontWeight: FontWeight.w600)),
+                      Text(formatTime12Hour(flight.arrivalTime), style: const TextStyle(fontSize: 26,fontWeight: FontWeight.w600)),
                       Text('${flight.toCode}(${flight.toCity})', style: const TextStyle(color: Colors.grey,fontSize: 13,fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
                     ],
                   ),
@@ -174,7 +175,8 @@ class _FlightDetailState extends State<FlightDetail> {
       );
     }
 
-    final int totalPrice = outbound.price + (showReturn ? returnFlight!.price : 0);
+    final int travellerCount = int.tryParse(searchController.travellers.value) ?? 1;
+    final int totalPrice = (outbound.price + (showReturn ? returnFlight!.price : 0)) * travellerCount;
 
     return Scaffold(
       appBar: AppBar(
@@ -219,7 +221,7 @@ class _FlightDetailState extends State<FlightDetail> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total Price', style: TextStyle(fontSize: 16,fontWeight: FontWeight.w600,color: Colors.grey)),
+                    Text('Total Price ($travellerCount ${travellerCount == 1 ? "traveller" : "travellers"})', style: const TextStyle(fontSize: 14,fontWeight: FontWeight.w600,color: Colors.grey)),
                     Text('₹$totalPrice', style: const TextStyle(color: Colors.black,fontSize: 22,fontWeight: FontWeight.w600)),
                   ],
                 ),

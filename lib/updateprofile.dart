@@ -22,6 +22,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
 
   Uint8List? _image;
   File? selectedIMage;
+  bool isUploadingPhoto = false;
 
   TextEditingController nameController = TextEditingController();
   TextEditingController addressController = TextEditingController();
@@ -58,13 +59,9 @@ class _UpdateProfileState extends State<UpdateProfile> {
           emailController.text = user['email'] ?? '';
           isLoading = false;
         });
+        authController.profilePhotoUrl.value = user['profilePhotoUrl'] ?? '';
       } else {
         setState(() { isLoading = false; });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data['message'] ?? 'Could not load profile')),
-          );
-        }
       }
     } catch (e) {
       setState(() { isLoading = false; });
@@ -72,6 +69,47 @@ class _UpdateProfileState extends State<UpdateProfile> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Could not connect to server. Is the backend running?')),
         );
+      }
+    }
+  }
+
+  Future<void> uploadPhoto(File imageFile) async {
+    setState(() { isUploadingPhoto = true; });
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConfig.baseUrl}/api/user/profile/photo'),
+      );
+      request.headers['Authorization'] = 'Bearer ${authController.token.value}';
+      request.files.add(await http.MultipartFile.fromPath('photo', imageFile.path));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        authController.profilePhotoUrl.value = data['profilePhotoUrl'];
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile photo updated')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(data['message'] ?? 'Could not upload photo')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not connect to server. Is the backend running?')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() { isUploadingPhoto = false; });
       }
     }
   }
@@ -142,19 +180,30 @@ class _UpdateProfileState extends State<UpdateProfile> {
                 Center(
                   child: Stack(
                       children: [
-                        _image != null
-                            ? CircleAvatar(
+                        Obx(() {
+                          ImageProvider? avatarImage;
+                          if (_image != null) {
+                            avatarImage = MemoryImage(_image!);
+                          } else if (authController.profilePhotoUrl.value.isNotEmpty) {
+                            avatarImage = NetworkImage('${ApiConfig.baseUrl}${authController.profilePhotoUrl.value}');
+                          }
+                          return CircleAvatar(
                             radius: 50,
-                            backgroundImage: MemoryImage(_image!))
-                            : const  CircleAvatar(
-                          radius: 50,
-                        ),
+                            backgroundImage: avatarImage,
+                            child: avatarImage == null ? const Icon(Icons.person, size: 50) : null,
+                          );
+                        }),
                         Positioned(
-                            bottom: -5,
-                            left: 65,
-                            child: IconButton(onPressed: (){
+                          bottom: -5,
+                          left: 65,
+                          child: IconButton(
+                            onPressed: isUploadingPhoto ? null : () {
                               showImagePickerOption(context);
-                            },icon:const Icon(Icons.add_a_photo),)
+                            },
+                            icon: isUploadingPhoto
+                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                : const Icon(Icons.add_a_photo),
+                          ),
                         ),
                       ]
                   ),
@@ -273,6 +322,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
               Expanded(
                 child: InkWell(
                   onTap: (){
+                    Navigator.pop(context);
                     _picImageFromGallery();
                   },
                   child:const SizedBox(
@@ -291,6 +341,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
               Expanded(
                 child: InkWell(
                   onTap: (){
+                    Navigator.pop(context);
                     _picImageFromCemra();
                   },
                   child: const SizedBox(
@@ -321,7 +372,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
       selectedIMage = File(returnImage.path);
       _image = File(returnImage.path).readAsBytesSync();
     });
-
+    await uploadPhoto(selectedIMage!);
   }
   Future _picImageFromCemra() async {
     final returnImage =
@@ -331,5 +382,6 @@ class _UpdateProfileState extends State<UpdateProfile> {
       selectedIMage = File(returnImage.path);
       _image = File(returnImage.path).readAsBytesSync();
     });
+    await uploadPhoto(selectedIMage!);
   }
 }

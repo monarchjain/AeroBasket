@@ -15,7 +15,7 @@ class FlightSearchController extends GetxController {
 
   var searchResults = <Flight>[].obs;
   var isSearching = false.obs;
-  var currentLeg = 'outbound'.obs; // 'outbound' or 'return'
+  var currentLeg = 'outbound'.obs;
 
   Flight? selectedOutboundFlight;
   Flight? selectedReturnFlight;
@@ -29,7 +29,7 @@ class FlightSearchController extends GetxController {
 
   Future<bool> searchReturn() async {
     currentLeg.value = 'return';
-    return _search(from: toCity.value, to: fromCity.value); // reversed route
+    return _search(from: toCity.value, to: fromCity.value);
   }
 
   Future<bool> _search({required String from, required String to}) async {
@@ -39,6 +39,7 @@ class FlightSearchController extends GetxController {
         queryParameters: {
           if (from.isNotEmpty) 'from': from,
           if (to.isNotEmpty) 'to': to,
+          if (travelClass.value.isNotEmpty) 'travelClass': travelClass.value,
         },
       );
 

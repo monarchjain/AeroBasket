@@ -210,7 +210,7 @@ class _SignUpState extends State<SignUp> {
                 padding: const EdgeInsets.only(top: 40),
                 child: Container(
                   height: 95,
-                  width: 700,
+                  width: double.infinity,
                   decoration: const BoxDecoration(color: Color(0xFFFC774B),),
                   child: CupertinoButton(
                     child: const Text('Already Registered Sign in?', style: TextStyle(color: Colors.black, decoration: TextDecoration.underline, fontWeight: FontWeight.w600),),
