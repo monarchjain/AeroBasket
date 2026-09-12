@@ -1,6 +1,8 @@
 import 'package:aerobasket/splashscreen.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'config/api_config.dart';
+import 'config/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,8 +19,10 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Aerobasket',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFF88863)),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.navy, secondary: AppColors.runway),
+        scaffoldBackgroundColor: AppColors.paper,
         useMaterial3: true,
+        textTheme: GoogleFonts.interTextTheme(),
       ),
       home: const SplashScreen(),
     );

@@ -2,12 +2,13 @@ import 'dart:convert';
 import 'package:aerobasket/forgotpassword.dart';
 import 'package:aerobasket/homepage.dart';
 import 'package:aerobasket/signup.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'controllers/auth_controller.dart';
 import 'config/api_config.dart';
+import 'config/app_theme.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -34,125 +35,117 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(""),
-      ),
+      backgroundColor: AppColors.paper,
       body: SingleChildScrollView(
         child: Form(
           key: globalKey,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(child: Image.asset('assets/logo.png', width: 300, height: 151,)),
-              const Padding(
-                padding: EdgeInsets.only(left: 30),
-                child: Text("Login", style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(left: 30),
-                child: Text("Welcome Back to the app", style: TextStyle(color: Colors.grey),),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 30, right: 50, top: 20),
-                child: TextFormField(
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: "Email",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    hintText: "Enter your Email",
-                    prefixIcon: const Icon(Icons.mail_outline_outlined),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.only(top: 70, bottom: 36),
+                decoration: const BoxDecoration(
+                  color: AppColors.navy,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
                   ),
-                  validator: (value) {
-                    if (value!.isEmpty || !value.contains('@') || !value.contains('.')) {
-                      return 'Please enter a valid email address';
-                    }
-                    return null;
-                  },
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'AeroBasket',
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Welcome back',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(left: 30, right: 50, top: 30),
-                child: TextFormField(
-                  controller: passwordController,
-                  obscureText: passwordVisible,
-                  decoration: InputDecoration(
-                    labelText: "Password",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    hintText: "Enter your Password",
-                    suffixIcon: IconButton(
-                      icon: Icon(passwordVisible ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () {
-                        setState(() {
-                          passwordVisible = !passwordVisible;
-                        });
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: AppInputs.filled(label: "Email", hint: "Enter your email", icon: Icons.mail_outline),
+                      validator: (value) {
+                        if (value!.isEmpty || !value.contains('@') || !value.contains('.')) {
+                          return 'Please enter a valid email address';
+                        }
+                        return null;
                       },
                     ),
-                    alignLabelWithHint: false,
-                    filled: true,
-                  ),
-                  keyboardType: TextInputType.text,
-                  textInputAction: TextInputAction.done,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 190),
-                child: CupertinoButton(
-                  child: const Text('FORGOT PASSWORD ?', style: TextStyle(color: Color(0xFFEC441E), fontWeight: FontWeight.w600),),
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        CupertinoPageRoute(builder: (context) => const ForgotPassword())
-                    );
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 30),
-                child: Center(
-                  child: InkWell(
-                    onTap: isLoading ? null : sendPostRequest,
-                    child: Container(
-                      height: 40,
-                      width: 150,
-                      decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.all(Radius.circular(10)),
-                          border: Border.all(color: const Color(0xFFEC441E))
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: passwordVisible,
+                      decoration: AppInputs.filled(label: "Password", hint: "Enter your password", icon: Icons.lock_outline).copyWith(
+                        suffixIcon: IconButton(
+                          icon: Icon(passwordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: AppColors.slate),
+                          onPressed: () {
+                            setState(() { passwordVisible = !passwordVisible; });
+                          },
+                        ),
                       ),
-                      child: Center(
-                        child: isLoading
-                            ? const SizedBox(
-                          height: 20, width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEC441E)),
-                        )
-                            : const Text("Login", style: TextStyle(fontSize: 20, color: Color(0xFFEC441E), fontWeight: FontWeight.w600),),
+                      keyboardType: TextInputType.text,
+                      textInputAction: TextInputAction.done,
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Please enter a password';
+                        }
+                        return null;
+                      },
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: (){
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const ForgotPassword())
+                          );
+                        },
+                        child: Text('Forgot password?', style: GoogleFonts.inter(color: AppColors.runway, fontWeight: FontWeight.w600)),
                       ),
                     ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 140),
-                child: Container(
-                  height: 95,
-                  width: double.infinity,
-                  decoration: const BoxDecoration(color: Color(0xFFF88863)),
-                  child: CupertinoButton(
-                    child: const Text('SIGN UP', style: TextStyle(color: Colors.black, decoration: TextDecoration.underline, fontWeight: FontWeight.w600),),
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          CupertinoPageRoute(builder: (context) => const SignUp())
-                      );
-                    },
-                  ),
+                    const SizedBox(height: 12),
+                    PrimaryButton(
+                      label: "Log in",
+                      isLoading: isLoading,
+                      onTap: isLoading ? null : sendPostRequest,
+                    ),
+                    const SizedBox(height: 28),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Don't have an account?", style: GoogleFonts.inter(color: AppColors.slate)),
+                        TextButton(
+                          onPressed: (){
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const SignUp())
+                            );
+                          },
+                          child: Text('Sign up', style: GoogleFonts.inter(color: AppColors.runway, fontWeight: FontWeight.w700)),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -167,9 +160,7 @@ class _LoginState extends State<Login> {
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() { isLoading = true; });
 
     try {
       var response = await http.post(
@@ -190,6 +181,7 @@ class _LoginState extends State<Login> {
           name: data['user']['name'],
           email: data['user']['email'],
           phone: data['user']['phone'],
+          photoUrl: data['user']['profilePhotoUrl'],
         );
 
         if (mounted) {

@@ -40,6 +40,7 @@ dependencies:
   toggle_switch: ^2.1.0
   image_picker: ^1.0.7
   web_socket_channel: ^3.0.3
+  google_fonts: ^6.2.1
 
 # dependency_overrides:
 #   # Add overrides here if needed

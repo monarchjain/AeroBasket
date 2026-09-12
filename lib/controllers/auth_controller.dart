@@ -16,12 +16,14 @@ class AuthController extends GetxController {
     required String name,
     required String email,
     required String phone,
+    String? photoUrl,
   }) {
     this.token.value = token;
     userId.value = id;
     userName.value = name;
     userEmail.value = email;
     userPhone.value = phone;
+    profilePhotoUrl.value = photoUrl ?? '';
   }
 
   void logout() {

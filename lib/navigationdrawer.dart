@@ -5,6 +5,7 @@ import 'package:aerobasket/updateprofile.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'controllers/auth_controller.dart';
+import 'config/api_config.dart';
 
 class Navigationdrawer extends StatefulWidget {
   const Navigationdrawer({super.key});
@@ -52,8 +53,9 @@ class _NavigationdrawerState extends State<Navigationdrawer> {
             accountName: Text(authController.userName.value, style: const TextStyle(color: Colors.black)),
             accountEmail: Text(authController.userEmail.value, style: const TextStyle(color: Colors.black)),
             currentAccountPicture: CircleAvatar(
-              child: ClipOval(child: Image.asset("assets/profilepic.png"),
-              ),
+              backgroundImage: authController.profilePhotoUrl.value.isNotEmpty
+                  ? NetworkImage('${ApiConfig.baseUrl}${authController.profilePhotoUrl.value}')
+                  : const AssetImage("assets/profilepic.png") as ImageProvider,
             ),
             decoration: const BoxDecoration(
                 color: Colors.white

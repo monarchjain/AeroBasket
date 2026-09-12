@@ -260,6 +260,7 @@ class _SignUpState extends State<SignUp> {
           name: data['user']['name'],
           email: data['user']['email'],
           phone: data['user']['phone'],
+          photoUrl: data['user']['profilePhotoUrl'],
         );
 
         if (mounted) {
