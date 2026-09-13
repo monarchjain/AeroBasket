@@ -6,7 +6,6 @@ import 'package:aerobasket/payment.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import 'package:slider_button/slider_button.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'controllers/auth_controller.dart';
 import 'config/api_config.dart';
@@ -272,16 +271,11 @@ class _MycartState extends State<Mycart> {
                     },
                   ),
                   const SizedBox(height: 14),
-                  Center(
-                    child: SliderButton(
-                      action: () async {
+                  SlideToConfirm(
+                    label: "Slide to pay",
+                      onConfirm: () {
                         Navigator.push(context, MaterialPageRoute(builder: (context) => const Payment()));
-                        return null;
                       },
-                      label: Text("Slide for payment", style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 16)),
-                      icon: const Icon(Icons.arrow_forward, size: 28),
-                      backgroundColor: AppColors.runway,
-                    ),
                   ),
                 ],
               ),

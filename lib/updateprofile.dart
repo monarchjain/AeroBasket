@@ -1,15 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:aerobasket/homepage.dart';
 import 'package:flutter/foundation.dart';
-import 'package:aerobasket/searchpage.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'controllers/auth_controller.dart';
 import 'config/api_config.dart';
+import 'config/app_theme.dart';
 
 class UpdateProfile extends StatefulWidget {
   const UpdateProfile({super.key});
@@ -141,7 +140,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated successfully')),
           );
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const Homepage()));
+          Navigator.pop(context);
         }
       } else {
         if (mounted) {
@@ -166,218 +165,205 @@ class _UpdateProfileState extends State<UpdateProfile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text(''),
+      backgroundColor: AppColors.paper,
+      appBar: AppBar(
+        backgroundColor: AppColors.navy,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.runway))
+          : SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 6, bottom: 60),
+              decoration: const BoxDecoration(
+                color: AppColors.navy,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Edit profile',
+                    style: GoogleFonts.spaceGrotesk(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: -0.3),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Manage your account details',
+                    style: GoogleFonts.inter(fontSize: 14, color: Colors.white.withOpacity(0.7)),
+                  ),
+                ],
+              ),
+            ),
+            Transform.translate(
+              offset: const Offset(0, -50),
+              child: Center(
+                child: Stack(
+                  children: [
+                    Obx(() {
+                      ImageProvider? avatarImage;
+                      if (_image != null) {
+                        avatarImage = MemoryImage(_image!);
+                      } else if (authController.profilePhotoUrl.value.isNotEmpty) {
+                        avatarImage = NetworkImage('${ApiConfig.baseUrl}${authController.profilePhotoUrl.value}');
+                      }
+                      return CircleAvatar(
+                        radius: 52,
+                        backgroundColor: Colors.white,
+                        child: CircleAvatar(
+                          radius: 48,
+                          backgroundImage: avatarImage,
+                          backgroundColor: AppColors.mist,
+                          child: avatarImage == null ? const Icon(Icons.person, size: 44, color: AppColors.slate) : null,
+                        ),
+                      );
+                    }),
+                    Positioned(
+                      bottom: -2,
+                      right: 4,
+                      child: Material(
+                        color: AppColors.runway,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: isUploadingPhoto ? null : () => showImagePickerOption(context),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: isUploadingPhoto
+                                ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Transform.translate(
+              offset: const Offset(0, -30),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Obx(() => Text(
+                        authController.userName.value,
+                        style: GoogleFonts.spaceGrotesk(fontSize: 19, fontWeight: FontWeight.w600, color: AppColors.ink),
+                      )),
+                    ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: nameController,
+                      decoration: AppInputs.filled(label: "Name", icon: Icons.person_outline),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: addressController,
+                      decoration: AppInputs.filled(label: "Address", icon: Icons.location_on_outlined),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: AppInputs.filled(label: "Phone number", icon: Icons.phone_outlined),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: emailController,
+                      enabled: false,
+                      decoration: AppInputs.filled(label: "Email", icon: Icons.mail_outline),
+                    ),
+                    const SizedBox(height: 28),
+                    PrimaryButton(
+                      label: "Update profile",
+                      isLoading: isSaving,
+                      onTap: isSaving ? null : saveProfile,
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        body: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+    );
+  }
+
+  void showImagePickerOption(BuildContext context) {
+    showModalBottomSheet(
+      backgroundColor: AppColors.paper,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      context: context,
+      builder: (builder) {
+        return Padding(
+          padding: const EdgeInsets.all(18.0),
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height / 4.5,
+            child: Row(
               children: [
-                const Center(child: Text("Personal Info",style: TextStyle(fontSize: 30,fontWeight: FontWeight.bold),)),
-                Center(
-                  child: Stack(
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pop(context);
+                      _picImageFromGallery();
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Obx(() {
-                          ImageProvider? avatarImage;
-                          if (_image != null) {
-                            avatarImage = MemoryImage(_image!);
-                          } else if (authController.profilePhotoUrl.value.isNotEmpty) {
-                            avatarImage = NetworkImage('${ApiConfig.baseUrl}${authController.profilePhotoUrl.value}');
-                          }
-                          return CircleAvatar(
-                            radius: 50,
-                            backgroundImage: avatarImage,
-                            child: avatarImage == null ? const Icon(Icons.person, size: 50) : null,
-                          );
-                        }),
-                        Positioned(
-                          bottom: -5,
-                          left: 65,
-                          child: IconButton(
-                            onPressed: isUploadingPhoto ? null : () {
-                              showImagePickerOption(context);
-                            },
-                            icon: isUploadingPhoto
-                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Icon(Icons.add_a_photo),
-                          ),
-                        ),
-                      ]
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Center(child: Obx(() => Text(authController.userName.value,style: const TextStyle(fontSize: 20,fontWeight: FontWeight.bold),))),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 20,left: 20,right: 20),
-                  child: TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                        labelText: "Name",
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10)
-                        ),
-                        hintText: "Enter your Name"
+                        const Icon(Icons.image_outlined, size: 44, color: AppColors.navy),
+                        const SizedBox(height: 10),
+                        Text('Gallery', style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: AppColors.ink)),
+                      ],
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 20,left: 20,right: 20),
-                  child: TextField(
-                    controller: addressController,
-                    decoration: InputDecoration(
-                        labelText: "Address",
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10)
-                        ),
-                        hintText: "Enter your Addresss"
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 20,left: 20,right: 20),
-                  child: TextField(
-                    controller: phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                        labelText: "Phone Number",
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10)
-                        ),
-                        hintText: "Enter your Phone Number"
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 20,left: 20,right: 20),
-                  child: TextField(
-                    controller: emailController,
-                    enabled: false,
-                    decoration: InputDecoration(
-                        labelText: "Email",
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10)
-                        ),
-                        hintText: "Enter your Email",
-                        prefixIcon: const Icon(Icons.email_outlined)
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Center(
-                    child: InkWell(
-                        onTap: isSaving ? null : saveProfile,
-                        child: Container(
-                          height: 40,
-                          width: 150,
-                          decoration: const BoxDecoration(
-                              borderRadius: BorderRadius.all(Radius.circular(10)),
-                              color: Color(0xFFEC441E)
-                          ),
-                          child: Center(
-                            child: isSaving
-                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Text("Update Profile",style: TextStyle(fontSize: 20,color: Colors.white),),
-                          ),
-                        )
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Center(
-                    child: CupertinoButton(
-                      child: const Text('Skip',style: TextStyle(color: Color(0xFFEC441E)),),
-                      onPressed: (){
-                        Navigator.push(
-                            context,
-                            CupertinoPageRoute(builder :(context) => const Searchpage())
-                        );
-                      },
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pop(context);
+                      _picImageFromCemra();
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.camera_alt_outlined, size: 44, color: AppColors.navy),
+                        const SizedBox(height: 10),
+                        Text('Camera', style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: AppColors.ink)),
+                      ],
                     ),
                   ),
                 ),
               ],
-
-            )
-        )
+            ),
+          ),
+        );
+      },
     );
   }
-  void showImagePickerOption(BuildContext context){
-    showModalBottomSheet(
-        backgroundColor: const Color(0xFFF88863),
-        context: context, builder: (builder){
-      return Padding(
-        padding: const EdgeInsets.all(18.0),
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height/4.5,
-          child: Row(
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: (){
-                    Navigator.pop(context);
-                    _picImageFromGallery();
-                  },
-                  child:const SizedBox(
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(top: 50),
-                          child: Icon(Icons.image,size: 70,),
-                        ),
-                        Text('Gallery')
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: InkWell(
-                  onTap: (){
-                    Navigator.pop(context);
-                    _picImageFromCemra();
-                  },
-                  child: const SizedBox(
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(top: 50),
-                          child: Icon(Icons.camera_alt,size: 70,),
-                        ),
-                        Text('Camera')
-                      ],
-                    ),
-                  ),
-                ),
-              )
-            ],
-          ),
-        ),
-      );
 
-    });
-  }
   Future _picImageFromGallery() async {
-    final returnImage =
-    await ImagePicker().pickImage(source: ImageSource.gallery);
-    if(returnImage == null)return;
+    final returnImage = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (returnImage == null) return;
     setState(() {
       selectedIMage = File(returnImage.path);
       _image = File(returnImage.path).readAsBytesSync();
     });
     await uploadPhoto(selectedIMage!);
   }
+
   Future _picImageFromCemra() async {
-    final returnImage =
-    await ImagePicker().pickImage(source: ImageSource.camera);
-    if(returnImage == null)return;
+    final returnImage = await ImagePicker().pickImage(source: ImageSource.camera);
+    if (returnImage == null) return;
     setState(() {
       selectedIMage = File(returnImage.path);
       _image = File(returnImage.path).readAsBytesSync();

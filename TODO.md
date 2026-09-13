@@ -1,5 +1,8 @@
-- [x] Remove existing .git directory
-- [x] Initialize new Git repository
-- [ ] Add all files to staging area
-- [ ] Commit all changes with a single commit
-- [ ] Verify project works by running flutter pub get
+- [ ] Update change password UI
+- [ ] Edit payment slide in my cart 
+- [ ] Add option for connecting flights 
+- [ ] Then my booking page edit 
+- [ ] Add support page and rating page and connect it to navigation drawer
+- [ ] Payment option add
+- [ ] Edit Add passenger page
+- 

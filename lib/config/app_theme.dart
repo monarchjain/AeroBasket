@@ -65,7 +65,83 @@ class PrimaryButton extends StatelessWidget {
     );
   }
 }
+class SlideToConfirm extends StatefulWidget {
+  final String label;
+  final VoidCallback onConfirm;
+  const SlideToConfirm({super.key, required this.label, required this.onConfirm});
 
+  @override
+  State<SlideToConfirm> createState() => _SlideToConfirmState();
+}
+
+class _SlideToConfirmState extends State<SlideToConfirm> {
+  double _dragX = 0;
+  bool _confirmed = false;
+
+  static const double _thumbSize = 48;
+  static const double _trackHeight = 56;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double maxDrag = constraints.maxWidth - _thumbSize - 8;
+        return Container(
+          height: _trackHeight,
+          decoration: BoxDecoration(
+            color: AppColors.navy,
+            borderRadius: BorderRadius.circular(_trackHeight / 2),
+          ),
+          child: Stack(
+            alignment: Alignment.centerLeft,
+            children: [
+              Center(
+                child: Text(
+                  widget.label,
+                  style: GoogleFonts.inter(color: Colors.white.withOpacity(0.75), fontWeight: FontWeight.w500, fontSize: 15),
+                ),
+              ),
+              AnimatedPositioned(
+                duration: _confirmed ? const Duration(milliseconds: 250) : Duration.zero,
+                left: 4 + _dragX,
+                top: 4,
+                child: GestureDetector(
+                  onHorizontalDragUpdate: (details) {
+                    if (_confirmed) return;
+                    setState(() {
+                      _dragX = (_dragX + details.delta.dx).clamp(0, maxDrag);
+                    });
+                  },
+                  onHorizontalDragEnd: (details) {
+                    if (_confirmed) return;
+                    if (_dragX > maxDrag * 0.75) {
+                      setState(() {
+                        _dragX = maxDrag;
+                        _confirmed = true;
+                      });
+                      widget.onConfirm();
+                    } else {
+                      setState(() { _dragX = 0; });
+                    }
+                  },
+                  child: Container(
+                    height: _thumbSize,
+                    width: _thumbSize,
+                    decoration: const BoxDecoration(
+                      color: AppColors.runway,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.arrow_forward, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
 class SecondaryButton extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
