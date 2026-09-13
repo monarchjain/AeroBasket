@@ -8,8 +8,10 @@ import 'package:toggle_switch/toggle_switch.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:google_fonts/google_fonts.dart';
 import 'controllers/flight_search_controller.dart';
 import 'config/api_config.dart';
+import 'config/app_theme.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -61,16 +63,15 @@ class _HomepageState extends State<Homepage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.paper,
       appBar: AppBar(
-        toolbarHeight: 100,
-        title: const Padding(
-          padding: EdgeInsets.only(left: 70),
-          child: Text('AeroBasket',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 25),),
-        ),
-        backgroundColor: const Color(0xFFF88863),
+        backgroundColor: AppColors.navy,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: Text('AeroBasket', style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w600, fontSize: 22, color: Colors.white)),
         actions: <Widget>[
           IconButton(
-            icon: const Icon(Icons.add_shopping_cart,size: 30,),
+            icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
             onPressed: () {
               Navigator.push(
                 context,
@@ -86,20 +87,22 @@ class _HomepageState extends State<Homepage> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 50),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 28, bottom: 36),
+              color: AppColors.navy,
               child: Center(
                 child: ToggleSwitch(
-                  minWidth: 90,
-                  minHeight: 40,
-                  cornerRadius: 20.0,
+                  minWidth: 100,
+                  minHeight: 38,
+                  cornerRadius: 19.0,
                   radiusStyle: true,
-                  fontSize: 16.0,
+                  fontSize: 14.0,
                   initialLabelIndex: _isShow ? 1 :0,
-                  activeBgColor: const [Color(0xFFEC441E)],
+                  activeBgColor: const [AppColors.runway],
                   activeFgColor: Colors.white,
-                  inactiveBgColor: Colors.grey,
-                  inactiveFgColor: Colors.white,
+                  inactiveBgColor: AppColors.navy,
+                  inactiveFgColor: Colors.white70,
                   totalSwitches: 2,
                   labels: const ['One Way', 'Round',],
                   onToggle: (index) => setState(() {
@@ -108,103 +111,51 @@ class _HomepageState extends State<Homepage> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 50, left: 20, right: 20),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      DropdownButtonFormField<String>(
-                        value: selectedFromCity,
-                        decoration: InputDecoration(
-                            labelText: "From",
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10)
-                            ),
-                            prefixIcon: const Icon(Icons.flight_takeoff)
+            Transform.translate(
+              offset: const Offset(0, -20),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Card(
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          value: selectedFromCity,
+                          decoration: AppInputs.filled(label: "From", icon: Icons.flight_takeoff, hint: isLoadingCities ? "Loading cities..." : "Select departure city"),
+                          items: cityList.map((city) => DropdownMenuItem(value: city, child: Text(city, style: GoogleFonts.inter()))).toList(),
+                          onChanged: (value) {
+                            setState(() { selectedFromCity = value; });
+                          },
                         ),
-                        hint: Text(isLoadingCities ? "Loading cities..." : "Select departure city"),
-                        items: cityList.map((city) => DropdownMenuItem(value: city, child: Text(city))).toList(),
-                        onChanged: (value) {
-                          setState(() { selectedFromCity = value; });
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: selectedToCity,
-                        decoration: InputDecoration(
-                            labelText: "To",
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10)
-                            ),
-                            prefixIcon: const Icon(Icons.flight_land)
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: selectedToCity,
+                          decoration: AppInputs.filled(label: "To", icon: Icons.flight_land, hint: isLoadingCities ? "Loading cities..." : "Select arrival city"),
+                          items: cityList.map((city) => DropdownMenuItem(value: city, child: Text(city, style: GoogleFonts.inter()))).toList(),
+                          onChanged: (value) {
+                            setState(() { selectedToCity = value; });
+                          },
                         ),
-                        hint: Text(isLoadingCities ? "Loading cities..." : "Select arrival city"),
-                        items: cityList.map((city) => DropdownMenuItem(value: city, child: Text(city))).toList(),
-                        onChanged: (value) {
-                          setState(() { selectedToCity = value; });
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: travellerController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: "Traveller",
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10)
-                          ),
-                          prefixIcon: const Icon(Icons.person_outline),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: travellerController,
+                          keyboardType: TextInputType.number,
+                          decoration: AppInputs.filled(label: "Traveller", icon: Icons.person_outline),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.only(right: _isShow ? 8 : 0),
-                              child: TextField(
-                                  controller: dateinput,
-                                  decoration: InputDecoration(
-                                      labelText: "Date",
-                                      border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(10)
-                                      ),
-                                      prefixIcon: const Icon(Icons.calendar_month)
-                                  ),
-                                  readOnly: true,
-                                  onTap: () async {
-                                    DateTime? date = await showDatePicker(
-                                        context: context,initialDate: DateTime.now(),
-                                        firstDate: DateTime(2000),
-                                        lastDate: DateTime(2101)
-                                    );
-                                    if (date != null) {
-                                      if (kDebugMode) { print(date); }
-                                      String formattedDate = DateFormat('yyyy-MM-dd').format(date);
-                                      setState(() {dateinput.text = formattedDate;});
-                                    }
-                                  }
-                              ),
-                            ),
-                          ),
-                          if (_isShow)
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
                             Expanded(
                               child: Padding(
-                                padding: const EdgeInsets.only(left: 8),
+                                padding: EdgeInsets.only(right: _isShow ? 8 : 0),
                                 child: TextField(
-                                    controller: returnDateInput,
-                                    decoration: InputDecoration(
-                                        labelText: "Return",
-                                        border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(10)
-                                        ),
-                                        hintText: "Return date",
-                                        prefixIcon: const Icon(Icons.add)
-                                    ),
+                                    controller: dateinput,
+                                    decoration: AppInputs.filled(label: "Date", icon: Icons.calendar_month),
                                     readOnly: true,
                                     onTap: () async {
                                       DateTime? date = await showDatePicker(
@@ -215,115 +166,121 @@ class _HomepageState extends State<Homepage> {
                                       if (date != null) {
                                         if (kDebugMode) { print(date); }
                                         String formattedDate = DateFormat('yyyy-MM-dd').format(date);
-                                        setState(() {returnDateInput.text = formattedDate;});
+                                        setState(() {dateinput.text = formattedDate;});
                                       }
                                     }
                                 ),
                               ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: SizedBox(
-                          width: 170,
-                          child: DropdownButtonFormField<String>(
-                              value: dropdown,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            if (_isShow)
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: TextField(
+                                      controller: returnDateInput,
+                                      decoration: AppInputs.filled(label: "Return", icon: Icons.event_repeat),
+                                      readOnly: true,
+                                      onTap: () async {
+                                        DateTime? date = await showDatePicker(
+                                            context: context,initialDate: DateTime.now(),
+                                            firstDate: DateTime(2000),
+                                            lastDate: DateTime(2101)
+                                        );
+                                        if (date != null) {
+                                          if (kDebugMode) { print(date); }
+                                          String formattedDate = DateFormat('yyyy-MM-dd').format(date);
+                                          setState(() {returnDateInput.text = formattedDate;});
+                                        }
+                                      }
+                                  ),
+                                ),
                               ),
-                              items: items.map((String item){
-                                return DropdownMenuItem(
-                                    value: item,
-                                    child: Text(item, style: const TextStyle(fontSize: 13)));
-                              }).toList(),
-                              onChanged: (String? newValue){
-                                setState(() {
-                                  dropdown = newValue!;
-                                });
-                              }
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Center(
+                          child: SizedBox(
+                            width: 200,
+                            child: DropdownButtonFormField<String>(
+                                value: dropdown,
+                                isExpanded: true,
+                                decoration: AppInputs.filled(label: "Class").copyWith(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                ),
+                                items: items.map((String item){
+                                  return DropdownMenuItem(
+                                      value: item,
+                                      child: Text(item, style: GoogleFonts.inter(fontSize: 13)));
+                                }).toList(),
+                                onChanged: (String? newValue){
+                                  setState(() {
+                                    dropdown = newValue!;
+                                  });
+                                }
+                            ),
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 24,bottom: 8),
-                        child: Center(
-                          child: Obx(() => InkWell(
-                            onTap: searchController.isSearching.value ? null : () async {
-                              if (selectedFromCity == null || selectedToCity == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Please select both From and To cities")),
-                                );
-                                return;
-                              }
-                              if (selectedFromCity == selectedToCity) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("From and To cities can't be the same")),
-                                );
-                                return;
-                              }
-                              if (dateinput.text.trim().isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Please select a travel date")),
-                                );
-                                return;
-                              }
-                              if (_isShow && returnDateInput.text.trim().isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Please select a return date for round trip")),
-                                );
-                                return;
-                              }
+                        const SizedBox(height: 20),
+                        Obx(() => PrimaryButton(
+                          label: "Search flights",
+                          isLoading: searchController.isSearching.value,
+                          onTap: searchController.isSearching.value ? null : () async {
+                            if (selectedFromCity == null || selectedToCity == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Please select both From and To cities")),
+                              );
+                              return;
+                            }
+                            if (selectedFromCity == selectedToCity) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("From and To cities can't be the same")),
+                              );
+                              return;
+                            }
+                            if (dateinput.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Please select a travel date")),
+                              );
+                              return;
+                            }
+                            if (_isShow && returnDateInput.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Please select a return date for round trip")),
+                              );
+                              return;
+                            }
 
-                              searchController.fromCity.value = selectedFromCity!;
-                              searchController.toCity.value = selectedToCity!;
-                              searchController.travelDate.value = dateinput.text;
-                              searchController.returnDate.value = returnDateInput.text;
-                              searchController.travellers.value =
-                              travellerController.text.trim().isEmpty ? "1" : travellerController.text.trim();
-                              searchController.travelClass.value = dropdown;
-                              searchController.isRoundTrip.value = _isShow;
+                            searchController.fromCity.value = selectedFromCity!;
+                            searchController.toCity.value = selectedToCity!;
+                            searchController.travelDate.value = dateinput.text;
+                            searchController.returnDate.value = returnDateInput.text;
+                            searchController.travellers.value =
+                            travellerController.text.trim().isEmpty ? "1" : travellerController.text.trim();
+                            searchController.travelClass.value = dropdown;
+                            searchController.isRoundTrip.value = _isShow;
 
-                              final success = await searchController.searchOutbound();
+                            final success = await searchController.searchOutbound();
 
-                              if (!context.mounted) return;
+                            if (!context.mounted) return;
 
-                              if (success) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const Searchpage()),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Could not connect to server. Is the backend running?")),
-                                );
-                              }
-                            },
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: Container(
-                                height: 44,
-                                decoration: const BoxDecoration(
-                                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                                    color: Color(0xFFEC441E)
-                                ),
-                                child: Center(
-                                  child: searchController.isSearching.value
-                                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                      : const Text("Search",style: TextStyle(fontSize: 18, color: Colors.white,fontWeight: FontWeight.w600),),
-                                ),
-                              ),
-                            ),
-                          )),
-                        ),
-                      )
-                    ],
+                            if (success) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const Searchpage()),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Could not connect to server. Is the backend running?")),
+                              );
+                            }
+                          },
+                        )),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

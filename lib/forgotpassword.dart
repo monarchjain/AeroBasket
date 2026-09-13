@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'package:aerobasket/login.dart';
 import 'package:aerobasket/otppage.dart';
 import 'package:aerobasket/signup.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:google_fonts/google_fonts.dart';
 import 'config/api_config.dart';
+import 'config/app_theme.dart';
 
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});
@@ -38,18 +39,16 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        // TEMPORARY: showing the OTP directly since real email isn't wired
-        // up yet. Remove this dialog once that's added.
         if (data['otp'] != null && mounted) {
           await showDialog(
             context: context,
             builder: (dialogContext) => AlertDialog(
-              title: const Text("Dev Mode: Your OTP"),
-              content: Text("Email sending isn't set up yet, so here's your OTP:\n\n${data['otp']}"),
+              title: Text("Dev mode: your OTP", style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w600)),
+              content: Text("Email sending isn't set up yet, so here's your OTP:\n\n${data['otp']}", style: GoogleFonts.inter()),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text("OK"),
+                  child: Text("OK", style: GoogleFonts.inter(color: AppColors.runway, fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
@@ -85,82 +84,97 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(''),
-      ),
+      backgroundColor: AppColors.paper,
       body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(child: Image.asset('assets/logo.png',width: 300,height: 151,)),
-            const Padding(
-              padding: EdgeInsets.only(top: 70,left: 20),
-              child: Text("Forgot Password?",style: TextStyle(fontSize: 30,fontWeight: FontWeight.bold),),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(left: 20, top: 10),
-              child: Text("Enter your Email Address to get \n the password reset link",style: TextStyle(color: Colors.grey),),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 30,right: 50,top: 40),
-              child: TextField(
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10)
-                  ),
-                  hintText: "Enter your Email",
-                  prefixIcon: const Icon(Icons.mail_outline_outlined),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 70, bottom: 36),
+              decoration: const BoxDecoration(
+                color: AppColors.navy,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 30),
-              child:InkWell(
-                onTap: isLoading ? null : sendOtp,
-                child: Center(
-                  child: Container(
-                    height: 40,
-                    width: 200,
-                    decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.all(Radius.circular(10)),
-                        border: Border.all(color: const Color(0xFFEC441E))
-                    ),
-                    child: Center(
-                      child: isLoading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEC441E)))
-                          : const Text("Send OTP",style: TextStyle(fontSize: 20, color: Color(0xFFEC441E),fontWeight: FontWeight.w600),),
+              child: Column(
+                children: [
+                  const Icon(Icons.lock_reset, color: Colors.white, size: 32),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Forgot password?',
+                    style: GoogleFonts.spaceGrotesk(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.3,
                     ),
                   ),
-                ),
-              ),
-            ),
-            Center(
-              child: CupertinoButton(
-                child: const Text('Back to login',style: TextStyle(color: Color(0xFFEC441E),fontWeight: FontWeight.w600),),
-                onPressed: (){
-                  Navigator.push(
-                      context,
-                      CupertinoPageRoute(builder :(context) => const Login())
-                  );
-                },
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Text(
+                      "Enter your email and we'll send you a code to reset it",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 160),
-              child: Center(
-                child: CupertinoButton(
-                  child: const Text('Create an account',style: TextStyle(color: Color(0xFFEC441E),fontWeight: FontWeight.bold),),
-                  onPressed: (){
-                    Navigator.push(
-                        context,
-                        CupertinoPageRoute(builder :(context) => const SignUp())
-                    );
-                  },
-                ),
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: AppInputs.filled(label: "Email", hint: "Enter your email", icon: Icons.mail_outline),
+                  ),
+                  const SizedBox(height: 24),
+                  PrimaryButton(
+                    label: "Send OTP",
+                    isLoading: isLoading,
+                    onTap: isLoading ? null : sendOtp,
+                  ),
+                  const SizedBox(height: 28),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("Remember your password?", style: GoogleFonts.inter(color: AppColors.slate)),
+                      TextButton(
+                        onPressed: (){
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(builder :(context) => const Login())
+                          );
+                        },
+                        child: Text('Sign in', style: GoogleFonts.inter(color: AppColors.runway, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("New here?", style: GoogleFonts.inter(color: AppColors.slate)),
+                      TextButton(
+                        onPressed: (){
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(builder :(context) => const SignUp())
+                          );
+                        },
+                        child: Text('Create an account', style: GoogleFonts.inter(color: AppColors.runway, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],

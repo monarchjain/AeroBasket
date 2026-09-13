@@ -65,3 +65,34 @@ class PrimaryButton extends StatelessWidget {
     );
   }
 }
+
+class SecondaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onTap;
+  const SecondaryButton({super.key, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.runway, width: 1.4),
+            ),
+            child: Center(
+              child: Text(label, style: GoogleFonts.inter(color: AppColors.runway, fontWeight: FontWeight.w600, fontSize: 16)),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

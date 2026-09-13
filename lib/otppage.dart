@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:aerobasket/resetpassword.dart';
-import 'package:aerobasket/signup.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:google_fonts/google_fonts.dart';
 import 'config/api_config.dart';
+import 'config/app_theme.dart';
 
 class OtpPage extends StatefulWidget {
   final String email;
@@ -69,8 +69,8 @@ class _OtpPageState extends State<OtpPage> {
 
   Widget otpBox(int index) {
     return SizedBox(
-      height: 68,
-      width: 64,
+      height: 60,
+      width: 52,
       child: TextField(
         controller: controllers[index],
         onChanged: (value){
@@ -78,9 +78,22 @@ class _OtpPageState extends State<OtpPage> {
             FocusScope.of(context).nextFocus();
           }
         },
+        style: GoogleFonts.spaceGrotesk(fontSize: 22, fontWeight: FontWeight.w600, color: AppColors.ink),
         decoration: InputDecoration(
+          filled: true,
+          fillColor: AppColors.mist,
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10)
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.runway, width: 1.6),
           ),
         ),
         keyboardType: TextInputType.number,
@@ -96,73 +109,65 @@ class _OtpPageState extends State<OtpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(""),
-      ),
+      backgroundColor: AppColors.paper,
       body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(child: Image.asset('assets/logo.png',width: 300,height: 151,)),
-            const Padding(
-              padding: EdgeInsets.only(left: 30,top: 20),
-              child: Text("Verification Code",style: TextStyle(fontSize: 30,fontWeight: FontWeight.bold),),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(left: 30,top: 60),
-              child: Text("Enter your 5 digit Passcode Sent on your E-mail ",style: TextStyle(fontSize: 15),),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 20),
-              child: Form(child: Padding(
-                padding: const EdgeInsets.only(left: 10,right: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    otpBox(0),
-                    otpBox(1),
-                    otpBox(2),
-                    otpBox(3),
-                    otpBox(4),
-                  ],
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 70, bottom: 36),
+              decoration: const BoxDecoration(
+                color: AppColors.navy,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
                 ),
-              )
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 40),
-              child:InkWell(
-                onTap: isLoading ? null : verifyOtp,
-                child: Center(
-                  child: Container(
-                    height: 40,
-                    width: 200,
-                    decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.all(Radius.circular(10)),
-                        border: Border.all(color: const Color(0xFFEC441E))
-                    ),
-                    child: Center(
-                      child: isLoading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEC441E)))
-                          : const Text("Verify OTP",style: TextStyle(fontSize: 20, color: Color(0xFFEC441E),fontWeight: FontWeight.w600),),
+              child: Column(
+                children: [
+                  const Icon(Icons.mark_email_read_outlined, color: Colors.white, size: 32),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Verification code',
+                    style: GoogleFonts.spaceGrotesk(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.3,
                     ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Text(
+                      'Enter the 5-digit code sent to ${widget.email}',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 230),
-              child: Center(
-                child: CupertinoButton(
-                  child: const Text('Create an account',style: TextStyle(color: Color(0xFFEC441E),fontWeight: FontWeight.bold),),
-                  onPressed: (){
-                    Navigator.push(
-                        context,
-                        CupertinoPageRoute(builder :(context) => const SignUp())
-                    );
-                  },
-                ),
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(5, (index) => otpBox(index)),
+                  ),
+                  const SizedBox(height: 32),
+                  PrimaryButton(
+                    label: "Verify code",
+                    isLoading: isLoading,
+                    onTap: isLoading ? null : verifyOtp,
+                  ),
+                ],
               ),
             ),
           ],

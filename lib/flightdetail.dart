@@ -5,9 +5,11 @@ import 'package:aerobasket/searchpage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:google_fonts/google_fonts.dart';
 import 'controllers/flight_search_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'config/api_config.dart';
+import 'config/app_theme.dart';
 import 'models/flight_model.dart';
 import 'utils/time_format.dart';
 
@@ -100,28 +102,29 @@ class _FlightDetailState extends State<FlightDetail> {
   Widget _flightCard(Flight flight, String label) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFFEC441E))),
-            const SizedBox(height: 10),
+            Text(label, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.runway)),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: const Color(0xFF4B0082), borderRadius: BorderRadius.circular(4)),
-                  child: Flexible(child: Text(flight.airline, style: const TextStyle(color: Colors.white,fontSize: 12), overflow: TextOverflow.ellipsis)),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: AppColors.navy, borderRadius: BorderRadius.circular(6)),
+                  child: Flexible(child: Text(flight.airline, style: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
                 ),
                 const SizedBox(width: 10),
-                Flexible(child: Text(flight.flightNumber, style: const TextStyle(color: Color(0xFF4D4C4C)), overflow: TextOverflow.ellipsis)),
+                Flexible(child: Text(flight.flightNumber, style: GoogleFonts.inter(color: AppColors.slate, fontSize: 13), overflow: TextOverflow.ellipsis)),
                 const Spacer(),
-                Text(flight.duration, style: const TextStyle(color: Colors.grey)),
+                Text(flight.duration, style: GoogleFonts.inter(color: AppColors.slate, fontSize: 13)),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -129,30 +132,33 @@ class _FlightDetailState extends State<FlightDetail> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(formatTime12Hour(flight.departureTime), style: const TextStyle(fontSize: 26,fontWeight: FontWeight.w600)),
-                      Text('${flight.fromCode}(${flight.fromCity})', style: const TextStyle(color: Colors.grey,fontSize: 13,fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                      Text(formatTime12Hour(flight.departureTime), style: GoogleFonts.spaceGrotesk(fontSize: 26,fontWeight: FontWeight.w600, color: AppColors.ink)),
+                      Text('${flight.fromCode} · ${flight.fromCity}', style: GoogleFonts.inter(color: AppColors.slate,fontSize: 13,fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
-                const Icon(Icons.flight, color: Color(0xFFEC441E)),
+                const Icon(Icons.flight, color: AppColors.runway, size: 22),
                 Flexible(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(formatTime12Hour(flight.arrivalTime), style: const TextStyle(fontSize: 26,fontWeight: FontWeight.w600)),
-                      Text('${flight.toCode}(${flight.toCity})', style: const TextStyle(color: Colors.grey,fontSize: 13,fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                      Text(formatTime12Hour(flight.arrivalTime), style: GoogleFonts.spaceGrotesk(fontSize: 26,fontWeight: FontWeight.w600, color: AppColors.ink)),
+                      Text('${flight.toCode} · ${flight.toCity}', style: GoogleFonts.inter(color: AppColors.slate,fontSize: 13,fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Divider(height: 1, color: AppColors.mist),
+            ),
             Row(
               children: [
-                const Icon(Icons.airline_seat_recline_normal, color: Colors.grey, size: 18),
+                const Icon(Icons.airline_seat_recline_normal, color: AppColors.slate, size: 18),
                 const SizedBox(width: 8),
                 Flexible(
-                  child: Text("${flight.travelClass} • ${flight.seatsAvailable} seats left • ₹${flight.price}", style: const TextStyle(color: Colors.grey,fontWeight: FontWeight.w600, fontSize: 13), overflow: TextOverflow.ellipsis),
+                  child: Text("${flight.travelClass} • ${flight.seatsAvailable} seats left • ₹${flight.price}", style: GoogleFonts.inter(color: AppColors.slate,fontWeight: FontWeight.w500, fontSize: 13), overflow: TextOverflow.ellipsis),
                 ),
               ],
             ),
@@ -170,8 +176,9 @@ class _FlightDetailState extends State<FlightDetail> {
 
     if (outbound == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Flight Details')),
-        body: const Center(child: Text('No flight selected. Please go back and choose a flight.')),
+        backgroundColor: AppColors.paper,
+        appBar: AppBar(backgroundColor: AppColors.navy, foregroundColor: Colors.white, title: const Text('Flight details')),
+        body: Center(child: Text('No flight selected. Please go back and choose a flight.', style: GoogleFonts.inter(color: AppColors.slate))),
       );
     }
 
@@ -179,16 +186,19 @@ class _FlightDetailState extends State<FlightDetail> {
     final int totalPrice = (outbound.price + (showReturn ? returnFlight!.price : 0)) * travellerCount;
 
     return Scaffold(
+      backgroundColor: AppColors.paper,
       appBar: AppBar(
+        backgroundColor: AppColors.navy,
+        foregroundColor: Colors.white,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Flight Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-        backgroundColor: const Color(0xFFF88863),
+        title: Text('Flight details', style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w600, fontSize: 19, color: Colors.white)),
         actions: <Widget>[
           IconButton(
-            icon: const Icon(Icons.add_shopping_cart, size: 26),
+            icon: const Icon(Icons.shopping_cart_outlined),
             onPressed: () {
               Navigator.push(
                 context,
@@ -203,7 +213,7 @@ class _FlightDetailState extends State<FlightDetail> {
         children: [
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: 12),
               children: [
                 _flightCard(outbound, showReturn ? "Outbound" : "Flight"),
                 if (showReturn) _flightCard(returnFlight!, "Return"),
@@ -211,58 +221,41 @@ class _FlightDetailState extends State<FlightDetail> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
               color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, -2))],
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, -2))],
             ),
             child: Column(
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Total Price ($travellerCount ${travellerCount == 1 ? "traveller" : "travellers"})', style: const TextStyle(fontSize: 14,fontWeight: FontWeight.w600,color: Colors.grey)),
-                    Text('₹$totalPrice', style: const TextStyle(color: Colors.black,fontSize: 22,fontWeight: FontWeight.w600)),
+                    Text('Total price · $travellerCount ${travellerCount == 1 ? "traveller" : "travellers"}', style: GoogleFonts.inter(fontSize: 13,fontWeight: FontWeight.w500,color: AppColors.slate)),
+                    Text('₹$totalPrice', style: GoogleFonts.spaceGrotesk(color: AppColors.ink,fontSize: 22,fontWeight: FontWeight.w600)),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 Row(
                   children: [
                     Expanded(
-                      child: InkWell(
+                      child: SecondaryButton(
+                        label: "Cancel",
                         onTap: (){
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const Searchpage()),
                           );
                         },
-                        child: Container(
-                          height: 44,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFEC441E)),
-                          ),
-                          child: const Center(child: Text("Cancel", style: TextStyle(fontSize: 16, color: Color(0xFFEC441E)))),
-                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       flex: 2,
-                      child: InkWell(
+                      child: PrimaryButton(
+                        label: "Add to cart",
+                        isLoading: isAdding,
                         onTap: isAdding ? null : addToCart,
-                        child: Container(
-                          height: 44,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: const Color(0xFFEC441E),
-                          ),
-                          child: Center(
-                            child: isAdding
-                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Text("Add to Cart", style: TextStyle(fontSize: 16, color: Colors.white,fontWeight: FontWeight.w600)),
-                          ),
-                        ),
                       ),
                     ),
                   ],

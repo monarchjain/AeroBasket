@@ -4,8 +4,10 @@ import 'package:aerobasket/mybooking.dart';
 import 'package:aerobasket/updateprofile.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'controllers/auth_controller.dart';
 import 'config/api_config.dart';
+import 'config/app_theme.dart';
 
 class Navigationdrawer extends StatefulWidget {
   const Navigationdrawer({super.key});
@@ -21,12 +23,12 @@ class _NavigationdrawerState extends State<Navigationdrawer> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text("Sign Out"),
-        content: const Text("Are you sure you want to sign out?"),
+        title: Text("Sign out", style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w600)),
+        content: Text("Are you sure you want to sign out?", style: GoogleFonts.inter()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("Cancel"),
+            child: Text("Cancel", style: GoogleFonts.inter(color: AppColors.slate)),
           ),
           TextButton(
             onPressed: () {
@@ -37,72 +39,65 @@ class _NavigationdrawerState extends State<Navigationdrawer> {
                     (route) => false,
               );
             },
-            child: const Text("Sign Out", style: TextStyle(color: Colors.red)),
+            child: Text("Sign out", style: GoogleFonts.inter(color: Colors.red, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
     );
   }
 
+  Widget _tile(IconData icon, String label, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.navy),
+      title: Text(label, style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+      onTap: onTap,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
+      backgroundColor: AppColors.paper,
       child: ListView(
+        padding: EdgeInsets.zero,
         children: [
-          Obx(() => UserAccountsDrawerHeader(
-            accountName: Text(authController.userName.value, style: const TextStyle(color: Colors.black)),
-            accountEmail: Text(authController.userEmail.value, style: const TextStyle(color: Colors.black)),
-            currentAccountPicture: CircleAvatar(
-              backgroundImage: authController.profilePhotoUrl.value.isNotEmpty
-                  ? NetworkImage('${ApiConfig.baseUrl}${authController.profilePhotoUrl.value}')
-                  : const AssetImage("assets/profilepic.png") as ImageProvider,
-            ),
-            decoration: const BoxDecoration(
-                color: Colors.white
+          Obx(() => Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
+            decoration: const BoxDecoration(color: AppColors.navy),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: Colors.white,
+                  backgroundImage: authController.profilePhotoUrl.value.isNotEmpty
+                      ? NetworkImage('${ApiConfig.baseUrl}${authController.profilePhotoUrl.value}')
+                      : const AssetImage("assets/profilepic.png") as ImageProvider,
+                ),
+                const SizedBox(height: 14),
+                Text(authController.userName.value, style: GoogleFonts.spaceGrotesk(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(authController.userEmail.value, style: GoogleFonts.inter(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+              ],
             ),
           )),
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text("Edit Account"),
-            onTap: (){
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const UpdateProfile()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.lock),
-            title: const Text("Change Password"),
-            onTap: (){
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ChangePassword()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.file_copy_sharp),
-            title: const Text("My Bookings"),
-            onTap: (){
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MyBooking()),
-              );
-            },
-          ),
-          const ListTile(
-            leading: Icon(Icons.headset_mic_outlined),
-            title: Text("Support"),
-          ),
-          const ListTile(
-            leading: Icon(Icons.star),
-            title: Text("Rate Us"),
-          ),
-          const Divider(),
+          const SizedBox(height: 8),
+          _tile(Icons.edit_outlined, "Edit account", (){
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const UpdateProfile()));
+          }),
+          _tile(Icons.lock_outline, "Change password", (){
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const ChangePassword()));
+          }),
+          _tile(Icons.confirmation_number_outlined, "My bookings", (){
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const MyBooking()));
+          }),
+          _tile(Icons.headset_mic_outlined, "Support", (){}),
+          _tile(Icons.star_border, "Rate us", (){}),
+          const Divider(height: 32),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text("Sign Out", style: TextStyle(color: Colors.red)),
+            title: Text("Sign out", style: GoogleFonts.inter(color: Colors.red, fontWeight: FontWeight.w600)),
             onTap: () => _confirmSignOut(context),
           ),
         ],
