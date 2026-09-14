@@ -78,7 +78,7 @@ class _MycartState extends State<Mycart> {
       groups.add(CartGroup(tripId: null, legs: [item]));
     }
     byTrip.forEach((tripId, legs) {
-      legs.sort((a, b) => a['legType'] == 'outbound' ? -1 : 1);
+      legs.sort((a, b) => (a['legType'] == 'outbound' || a['legType'] == 'leg1') ? -1 : 1);
       groups.add(CartGroup(tripId: tripId, legs: legs));
     });
 
@@ -93,6 +93,16 @@ class _MycartState extends State<Mycart> {
       );
     }
     await fetchCart();
+  }
+
+  String _legLabel(String legType) {
+    switch (legType) {
+      case 'outbound': return 'Outbound';
+      case 'return': return 'Return';
+      case 'leg1': return 'Leg 1';
+      case 'leg2': return 'Leg 2';
+      default: return '';
+    }
   }
 
   Widget _miniInfo(String label, String value) {
@@ -110,7 +120,7 @@ class _MycartState extends State<Mycart> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (label != null)
+        if (label != null && label.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(label, style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppColors.runway, fontSize: 13)),
@@ -164,7 +174,7 @@ class _MycartState extends State<Mycart> {
   }
 
   Widget _groupCard(CartGroup group) {
-    final bool isRoundTrip = group.legs.length > 1;
+    final bool isMultiLeg = group.legs.length > 1;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
@@ -175,7 +185,7 @@ class _MycartState extends State<Mycart> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             for (int i = 0; i < group.legs.length; i++) ...[
-              _legTile(group.legs[i], label: isRoundTrip ? (group.legs[i]['legType'] == 'outbound' ? 'Outbound' : 'Return') : null),
+              _legTile(group.legs[i], label: isMultiLeg ? _legLabel(group.legs[i]['legType'] ?? '') : null),
               if (i < group.legs.length - 1) Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Divider(height: 1, color: AppColors.mist)),
             ],
             Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Divider(height: 1, color: AppColors.mist)),
@@ -273,9 +283,9 @@ class _MycartState extends State<Mycart> {
                   const SizedBox(height: 14),
                   SlideToConfirm(
                     label: "Slide to pay",
-                      onConfirm: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const Payment()));
-                      },
+                    onConfirm: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const Payment()));
+                    },
                   ),
                 ],
               ),

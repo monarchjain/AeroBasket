@@ -57,32 +57,44 @@ class _FlightDetailState extends State<FlightDetail> {
   Future<void> addToCart() async {
     setState(() { isAdding = true; });
 
-    final bool roundTrip = searchController.isRoundTrip.value && searchController.selectedReturnFlight != null;
-    final String? tripId = roundTrip ? DateTime.now().microsecondsSinceEpoch.toString() : null;
+    final bool isConnection = searchController.selectedConnectionLegs != null;
+    final bool roundTrip = !isConnection && searchController.isRoundTrip.value && searchController.selectedReturnFlight != null;
+    final bool needsTripId = isConnection || roundTrip;
+    final String? tripId = needsTripId ? DateTime.now().microsecondsSinceEpoch.toString() : null;
 
     try {
-      final outbound = searchController.selectedOutboundFlight!;
-      final outboundOk = await _postCartItem(
-        flightId: outbound.id,
-        travelDate: searchController.travelDate.value,
-        legType: roundTrip ? 'outbound' : 'one_way',
-        tripId: tripId,
-      );
+      bool allOk;
 
-      bool returnOk = true;
-      if (roundTrip) {
-        final ret = searchController.selectedReturnFlight!;
-        returnOk = await _postCartItem(
-          flightId: ret.id,
-          travelDate: searchController.returnDate.value,
-          legType: 'return',
+      if (isConnection) {
+        final legs = searchController.selectedConnectionLegs!;
+        final ok1 = await _postCartItem(flightId: legs[0].id, travelDate: searchController.travelDate.value, legType: 'leg1', tripId: tripId);
+        final ok2 = await _postCartItem(flightId: legs[1].id, travelDate: searchController.travelDate.value, legType: 'leg2', tripId: tripId);
+        allOk = ok1 && ok2;
+      } else {
+        final outbound = searchController.selectedOutboundFlight!;
+        final outboundOk = await _postCartItem(
+          flightId: outbound.id,
+          travelDate: searchController.travelDate.value,
+          legType: roundTrip ? 'outbound' : 'one_way',
           tripId: tripId,
         );
+
+        bool returnOk = true;
+        if (roundTrip) {
+          final ret = searchController.selectedReturnFlight!;
+          returnOk = await _postCartItem(
+            flightId: ret.id,
+            travelDate: searchController.returnDate.value,
+            legType: 'return',
+            tripId: tripId,
+          );
+        }
+        allOk = outboundOk && returnOk;
       }
 
       if (!mounted) return;
 
-      if (outboundOk && returnOk) {
+      if (allOk) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Added to cart")),
         );
@@ -168,13 +180,33 @@ class _FlightDetailState extends State<FlightDetail> {
     );
   }
 
+  Widget _layoverBanner(int minutes, String city) {
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    final label = h > 0 ? '${h}h ${m}m layover in $city' : '${m}m layover in $city';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: AppColors.slate.withOpacity(0.3))),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(label, style: GoogleFonts.inter(fontSize: 12, color: AppColors.slate, fontWeight: FontWeight.w500)),
+          ),
+          Expanded(child: Divider(color: AppColors.slate.withOpacity(0.3))),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final List<Flight>? connectionLegs = searchController.selectedConnectionLegs;
     final Flight? outbound = searchController.selectedOutboundFlight;
     final bool showReturn = searchController.isRoundTrip.value && searchController.selectedReturnFlight != null;
     final Flight? returnFlight = searchController.selectedReturnFlight;
 
-    if (outbound == null) {
+    if (connectionLegs == null && outbound == null) {
       return Scaffold(
         backgroundColor: AppColors.paper,
         appBar: AppBar(backgroundColor: AppColors.navy, foregroundColor: Colors.white, title: const Text('Flight details')),
@@ -183,7 +215,27 @@ class _FlightDetailState extends State<FlightDetail> {
     }
 
     final int travellerCount = int.tryParse(searchController.travellers.value) ?? 1;
-    final int totalPrice = (outbound.price + (showReturn ? returnFlight!.price : 0)) * travellerCount;
+
+    int totalPrice;
+    List<Widget> cardWidgets;
+
+    if (connectionLegs != null) {
+      totalPrice = (connectionLegs[0].price + connectionLegs[1].price) * travellerCount;
+      final l1 = connectionLegs[0].arrivalTime.split(':').map(int.parse).toList();
+      final l2 = connectionLegs[1].departureTime.split(':').map(int.parse).toList();
+      final layoverMinutes = (l2[0] * 60 + l2[1]) - (l1[0] * 60 + l1[1]);
+      cardWidgets = [
+        _flightCard(connectionLegs[0], "Leg 1"),
+        _layoverBanner(layoverMinutes, connectionLegs[0].toCity),
+        _flightCard(connectionLegs[1], "Leg 2"),
+      ];
+    } else {
+      totalPrice = (outbound!.price + (showReturn ? returnFlight!.price : 0)) * travellerCount;
+      cardWidgets = [
+        _flightCard(outbound, showReturn ? "Outbound" : "Flight"),
+        if (showReturn) _flightCard(returnFlight!, "Return"),
+      ];
+    }
 
     return Scaffold(
       backgroundColor: AppColors.paper,
@@ -214,10 +266,7 @@ class _FlightDetailState extends State<FlightDetail> {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.only(top: 12),
-              children: [
-                _flightCard(outbound, showReturn ? "Outbound" : "Flight"),
-                if (showReturn) _flightCard(returnFlight!, "Return"),
-              ],
+              children: cardWidgets,
             ),
           ),
           Container(

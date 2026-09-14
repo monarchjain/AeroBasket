@@ -47,3 +47,34 @@ class Flight {
     );
   }
 }
+
+class ConnectingItinerary {
+  final List<Flight> legs;
+  final int layoverMinutes;
+  final String layoverCity;
+  final int totalPrice;
+
+  ConnectingItinerary({
+    required this.legs,
+    required this.layoverMinutes,
+    required this.layoverCity,
+    required this.totalPrice,
+  });
+
+  factory ConnectingItinerary.fromJson(Map<String, dynamic> json) {
+    return ConnectingItinerary(
+      legs: (json['legs'] as List).map((l) => Flight.fromJson(l)).toList(),
+      layoverMinutes: (json['layoverMinutes'] as num?)?.toInt() ?? 0,
+      layoverCity: json['layoverCity'] ?? '',
+      totalPrice: (json['totalPrice'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  String get layoverLabel {
+    final h = layoverMinutes ~/ 60;
+    final m = layoverMinutes % 60;
+    if (h > 0 && m > 0) return '${h}h ${m}m layover in $layoverCity';
+    if (h > 0) return '${h}h layover in $layoverCity';
+    return '${m}m layover in $layoverCity';
+  }
+}

@@ -14,16 +14,19 @@ class FlightSearchController extends GetxController {
   var isRoundTrip = false.obs;
 
   var searchResults = <Flight>[].obs;
+  var connectionResults = <ConnectingItinerary>[].obs;
   var isSearching = false.obs;
   var currentLeg = 'outbound'.obs;
 
   Flight? selectedOutboundFlight;
   Flight? selectedReturnFlight;
+  List<Flight>? selectedConnectionLegs;
 
   Future<bool> searchOutbound() async {
     currentLeg.value = 'outbound';
     selectedOutboundFlight = null;
     selectedReturnFlight = null;
+    selectedConnectionLegs = null;
     return _search(from: fromCity.value, to: toCity.value);
   }
 
@@ -47,15 +50,22 @@ class FlightSearchController extends GetxController {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
         final List<dynamic> flightsJson = data['flights'];
         searchResults.value = flightsJson.map((f) => Flight.fromJson(f)).toList();
+
+        final List<dynamic> connectionsJson = data['connections'] ?? [];
+        connectionResults.value = connectionsJson.map((c) => ConnectingItinerary.fromJson(c)).toList();
+
         return true;
       } else {
         searchResults.value = [];
+        connectionResults.value = [];
         return false;
       }
     } catch (e) {
       searchResults.value = [];
+      connectionResults.value = [];
       return false;
     } finally {
       isSearching.value = false;
